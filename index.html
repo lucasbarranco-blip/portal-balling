@@ -2086,7 +2086,9 @@ async function enviar(){
   const items=Object.keys(cart).map(k=>{const{m,f,t:tl}=find(k);
     return{sku:f.sku+'-'+tl,desc:`${m.nombre} ${f.n} ${tl}`,cant:cart[k],precio:pmay(f),sub:cart[k]*pmay(f)};});
   const num=Math.max(...PED.map(p=>p.n))+1;
-  PED.unshift({n:num,f:new Date().toISOString().slice(0,10),e:'pendiente',t:t.total,u:t.u,items:{...cart},notas:$('notas')?.value||''});
+  PED.unshift({n:num,f:new Date().toISOString().slice(0,10),e:'pendiente',t:t.total,u:t.u,
+    cli:CLI.razon, cuit:CLI.cuit, uid:SES?SES.uid:null,
+    items:{...cart},notas:$('notas')?.value||''});
   cart={}; draft={}; guardar(); toast('Pedido #'+num+' enviado'); nav(); ir('historial');
 }
 
@@ -2096,11 +2098,13 @@ const EST={
   facturado:['t','Facturado'], enviado:['t','Enviado'], terminado:['k','Terminado']};
 const PASOS=['pendiente','aceptado','facturado','enviado','terminado'];
 function vHistorial(){
+  /* Cada mayorista ve unicamente los pedidos de su cuenta. */
+  const MIOS = PED.filter(p=>p.uid && SES && p.uid===SES.uid);
   $('view').innerHTML=`<div class="title"><div><div class="eb">Compras anteriores</div><h1 class="wide">Historial</h1></div>
    <div class="sub">Duplicá cualquier pedido para volver a cargarlo, ajustado al stock de hoy.</div></div>
-  ${PED.length?`<div class="panel"><table><thead><tr><th>Pedido</th><th>Fecha</th><th>Estado</th><th>Avance</th>
+  ${MIOS.length?`<div class="panel"><table><thead><tr><th>Pedido</th><th>Fecha</th><th>Estado</th><th>Avance</th>
     <th class="n">Unidades</th><th class="n">Total c/IVA</th><th></th></tr></thead><tbody>
-    ${PED.map(p=>{const i=PASOS.indexOf(p.e);return`<tr>
+    ${MIOS.map(p=>{const i=PASOS.indexOf(p.e);return`<tr>
       <td class="m" style="font-weight:600">#${p.n}</td><td class="m">${p.f}</td>
       <td><span class="badge ${EST[p.e][0]}">${EST[p.e][1]}</span></td>
       <td><div class="track">${PASOS.map((_,k)=>`<i class="${k<i?'d':k===i?'c':''}"></i>`).join('')}</div></td>
@@ -2390,7 +2394,7 @@ function vEntrantes(){
     <th class="n">Unid.</th><th class="n">Total</th><th>Estado</th><th>Factura</th><th></th></tr></thead><tbody>
     ${l.map(p=>`<tr>
       <td><button class="lk" onclick="verRemito(${p.n})">#${p.n}</button></td>
-      <td>${CLI.razon}</td><td class="m">${fecha(p.f)}</td>
+      <td>${esc(p.cli||CLI.razon)}</td><td class="m">${fecha(p.f)}</td>
       <td class="n">${p.u}</td><td class="n" style="font-weight:600">${money(p.t)}</td>
       <td><span class="badge ${EST[p.e][0]}">${EST[p.e][1]}</span>
         ${p.e==='rechazado'&&p.motivo?`<div class="mot">${esc(p.motivo)}</div>`:''}</td>
