@@ -10,6 +10,2518 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ─────────────────────────────────────────────────────────────
+   Tipografía igual a ballinghockey.com:
+   · Instrument Sans → títulos, navegación, botones, UI (Google Fonts, libre)
+   · Vaud            → texto corrido y precios (licenciada, self-hosted)
+   Vaud es paga: si el representante tiene la licencia, subí los .woff2
+   y descomentá este bloque. Sin eso todo cae en Instrument Sans.
+
+@font-face{font-family:'Vaud';src:url('fonts/Vaud-Regular.woff2') format('woff2');
+  font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Vaud';src:url('fonts/Vaud-Medium.woff2') format('woff2');
+  font-weight:500;font-style:normal;font-display:swap}
+   ───────────────────────────────────────────────────────────── */
+:root{
+  --ink:#101013; --ink-2:#1B1B20; --paper:#EFEFEC; --card:#FFFFFF;
+  --teal:#0E6B63; --teal-d:#0A544E; --teal-l:#EAF3F1; --ember:#D9451F;
+  --mute:#77776F; --line:#DBDBD5; --line-2:#E9E9E4;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font:400 14.5px/1.55 'Vaud','Instrument Sans',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1}
+h1,h2,h3,nav,button,th,label,input,select,textarea,.ui{font-family:'Instrument Sans',system-ui,sans-serif}
+.m{font-variant-numeric:tabular-nums}
+.wide{letter-spacing:-.04em}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+img{display:block}
+::selection{background:var(--teal);color:#fff}
+
+/* ═══ acceso ═══ */
+#login{position:fixed;inset:0;z-index:100;background:var(--ink);display:grid;grid-template-columns:1fr 1fr}
+#login .art{background:var(--ink-2);position:relative;overflow:hidden;display:grid;place-items:center}
+#login .art .rings{position:absolute;inset:-30%;background:
+  repeating-radial-gradient(circle at 50% 50%, transparent 0 38px, rgba(255,255,255,.045) 38px 39px)}
+#login .art .word{position:relative;font-weight:600;font-size:clamp(46px,6.4vw,92px);
+  line-height:.98;color:#fff;letter-spacing:-.05em;text-align:center}
+#login .art .word em{display:block;font-style:normal;color:var(--teal);font-size:.19em;letter-spacing:.2em;
+  font-weight:500;margin-top:22px;text-transform:uppercase}
+#login .form{display:grid;place-items:center;padding:32px}
+.lbox{width:100%;max-width:330px}
+.lbox h2{font-weight:600;font-size:27px;color:#fff;letter-spacing:-.035em}
+.lbox p{color:#8A8A82;font-size:13px;margin:8px 0 26px}
+.f{margin-bottom:12px}
+.f label{display:block;font:500 10px/1 'Instrument Sans';text-transform:uppercase;letter-spacing:.12em;color:#8A8A82;margin-bottom:6px}
+.f input{width:100%;padding:11px 12px;background:#000;border:1px solid #2E2E34;color:#fff;border-radius:2px}
+.f input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 1px var(--teal)}
+.go{width:100%;padding:12px;background:var(--teal);color:#fff;font-weight:600;border-radius:2px;font-size:14px}
+.go:hover{background:var(--teal-d)}
+.hint{margin-top:20px;font:400 11px/1.7 'Instrument Sans';color:#6E6E66}
+.hint b{color:#C9C9C1;font-weight:500}
+#lerr{color:#FF9B7A;font:400 11px/1.6 'Instrument Sans';min-height:18px;margin-top:8px}
+
+/* ═══ chrome ═══ */
+#app{display:none;min-height:100%;flex-direction:column}
+#app.on{display:flex}
+header{background:var(--ink);color:#fff;position:sticky;top:0;z-index:40}
+.hrow{display:flex;align-items:center;gap:26px;padding:0 22px;height:54px}
+.logo{font-weight:600;font-size:19px;letter-spacing:-.05em}
+.logo i{color:var(--teal);font-style:normal}
+.hrow .tag{font:500 9px/1 'Instrument Sans';letter-spacing:.16em;color:#75756D;text-transform:uppercase;
+  border-left:1px solid #2E2E34;padding-left:14px;margin-left:-14px}
+nav{display:flex;gap:2px;margin-left:14px;height:100%;overflow-x:auto}
+nav button{padding:0 14px;color:#9A9A92;font-size:14px;white-space:nowrap;border-bottom:2px solid transparent}
+nav button:hover{color:#fff}
+nav button.on{color:#fff;border-bottom-color:var(--teal);font-weight:600}
+nav .n{font:500 10px/1 'Instrument Sans';background:var(--teal);color:#fff;padding:2px 5px;border-radius:2px;margin-left:6px}
+.qsw{position:relative;margin-left:auto;width:280px;flex:none}
+.qsw input{width:100%;padding:8px 11px 8px 32px;background:#1B1B20;border:1px solid #2E2E34;
+  color:#fff;border-radius:2px;font-size:13px}
+.qsw input::placeholder{color:#6E6E66}
+.qsw input:focus{outline:none;border-color:var(--teal);background:#000}
+.qsw .ic{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#6E6E66;font-size:12px;
+  pointer-events:none}
+.qsw .kbd{position:absolute;right:9px;top:50%;transform:translateY(-50%);color:#5E5E56;
+  font:500 10px 'Instrument Sans';border:1px solid #2E2E34;border-radius:2px;padding:2px 5px;pointer-events:none}
+.qsw input:focus~.kbd{display:none}
+#qsr{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--card);
+  border:1px solid var(--ink);box-shadow:0 14px 34px rgba(0,0,0,.24);z-index:70;max-height:60vh;overflow-y:auto}
+#qsr.on{display:block}
+.qsi{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;text-align:left;
+  border-bottom:1px solid var(--line-2)}
+.qsi:last-child{border-bottom:none}
+.qsi:hover,.qsi.on{background:var(--teal-l)}
+.qsi img{width:34px;height:34px;object-fit:cover;border:1px solid var(--line-2);flex:none}
+.qsi .qn{flex:1;min-width:0}
+.qsi .qn b{display:block;font:600 12px 'Instrument Sans';letter-spacing:-.01em}
+.qsi .qn em{display:block;font:400 11px 'Instrument Sans';font-style:normal;color:var(--mute);
+  margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qsi .qst{font:700 11px 'Instrument Sans';padding:4px 7px;border-radius:99px;flex:none;
+  background:#EDEDE8;color:var(--mute)}
+.qsi .qst.ok{background:var(--teal-l);color:var(--teal-d)}
+.qsi .qst.low{background:#FDE7DE;color:#A8330C}
+.qsi .qst.no{background:#F3F3EF;color:#A3A39B}
+.qsv{padding:16px;text-align:center;color:var(--mute);font-size:13px}
+
+.hright{display:flex;align-items:center;gap:16px;margin-left:16px}
+.acct{text-align:right;line-height:1.25}
+.acct .a{font-size:12.5px;font-weight:600}
+.acct .b{font:400 10px 'Instrument Sans';color:#75756D}
+.syncw{display:flex;align-items:center}
+.sync{display:flex;align-items:center;gap:7px;font:500 11px 'Instrument Sans';
+  border:1px solid #2E2E34;padding:7px 10px;border-radius:2px;color:#9A9A92;white-space:nowrap}
+.sync:hover{border-color:#4A4A52;color:#fff}
+.sync i{font-style:normal;font-size:13px;line-height:1}
+.sync em{font-style:normal;color:#6E6E66;font-size:10px}
+.sync.ok{color:#7FD0C4;border-color:#1E4B46} .sync.ok i{color:#3FBFAE}
+.sync.local i{color:#75756D}
+.sync.error{color:#E8A78C;border-color:#5A2E22} .sync.error i{color:var(--ember)}
+.sync.guardando i,.sync.cargando i{color:#7FD0C4;animation:lat 1s infinite}
+@keyframes lat{50%{opacity:.25}}
+.cgcode{background:var(--ink);color:#C9C9C1;padding:12px 14px;border-radius:2px;
+  font:400 11.5px/1.7 ui-monospace,monospace;white-space:pre;overflow-x:auto;margin:10px 0 4px}
+.cgpaso{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line-2);font-size:13px}
+.cgpaso:last-child{border-bottom:none}
+.cgpaso b{flex:none;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;
+  font:600 11px/22px 'Instrument Sans';text-align:center}
+.out{font:500 11px/1 'Instrument Sans';color:#75756D;text-transform:uppercase;letter-spacing:.09em;
+  border:1px solid #2E2E34;padding:7px 9px;border-radius:2px}
+.out:hover{color:#fff;border-color:#4A4A52}
+
+main{padding:24px 22px 128px;width:100%;max-width:1340px;margin:0 auto;flex:1}
+.title{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:20px}
+.title .eb{font:500 10px/1 'Instrument Sans';letter-spacing:.16em;text-transform:uppercase;color:var(--mute);margin-bottom:8px}
+.title h1{font-weight:600;font-size:33px;letter-spacing:-.04em;line-height:1.02}
+.title .sub{font-size:13px;color:var(--mute);max-width:340px;text-align:right}
+
+/* ═══ categorías ═══ */
+/* todas las fichas del mismo tamaño */
+.cats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:6px}
+.cats.subs{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+/* Las fotos de Balling son verticales (1200x1800): la ficha copia esa
+   proporción para que el producto ocupe todo y no quede aire a los costados. */
+.cat{position:relative;border:1px solid var(--line);background:var(--card);
+  display:flex;flex-direction:column;text-align:left;width:100%;
+  transition:border-color .15s,box-shadow .15s;overflow:hidden}
+.cat:hover{border-color:var(--ink);box-shadow:0 6px 22px rgba(16,16,19,.1)}
+.cat .fig{aspect-ratio:2/3;background:#fff;overflow:hidden;position:relative}
+.cat .fig img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+  opacity:0;transition:transform .35s ease,opacity .2s ease}
+.cat .fig img.ok{opacity:1}
+.cat:hover .fig img{transform:scale(1.04)}
+.cat .ov{display:flex;align-items:center;gap:8px;padding:14px 15px;min-height:54px;
+  border-top:1px solid var(--line-2)}
+.cat .cn{color:var(--ink);font-family:'Instrument Sans';font-weight:600;font-size:17px;
+  letter-spacing:-.03em;line-height:1.15}
+.cats.subs .cn{font-size:15px}
+.cat .cnota{margin-left:auto;font:500 9px/1 'Instrument Sans';letter-spacing:.09em;text-transform:uppercase;
+  color:var(--mute);border:1px solid var(--line);padding:4px 6px;border-radius:2px;white-space:nowrap}
+.cat .cq{position:absolute;top:11px;right:11px;z-index:1;
+  font:600 10.5px/1 'Instrument Sans';letter-spacing:.04em;
+  background:var(--teal-l);color:var(--teal-d);border:1px solid #9FCCC5;
+  padding:6px 8px;border-radius:2px;white-space:nowrap}
+.cat .cq.promo{background:var(--ember);color:#fff;border-color:var(--ember);font-weight:700}
+
+.back{display:inline-flex;align-items:center;gap:7px;font:500 12.5px 'Instrument Sans';color:var(--mute);
+  border:1px solid var(--line);background:var(--card);padding:8px 12px;border-radius:2px;margin-bottom:16px}
+.back:hover{color:var(--ink);border-color:var(--ink)}
+
+/* ═══ filtros ═══ */
+.bar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.bar input,.bar select{padding:9px 11px;border:1px solid var(--line);background:var(--card);border-radius:2px}
+.bar input{flex:1;min-width:190px}
+.bar input:focus,.bar select:focus{outline:none;border-color:var(--ink)}
+.chip{padding:8px 12px;border:1px solid var(--line);background:var(--card);border-radius:2px;font-size:12.5px;color:var(--mute)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.count{font:400 11px 'Instrument Sans';color:var(--mute);margin-left:auto}
+
+/* ═══ modelo ═══ */
+.mod{background:var(--card);border:1px solid var(--line);margin-bottom:8px}
+.mod.open{border-color:var(--ink)}
+.mh{display:grid;grid-template-columns:74px 1fr auto auto;gap:16px;align-items:center;padding:11px 14px;cursor:pointer}
+.mh:hover{background:#FAFAF8}
+.ph{width:74px;height:74px;object-fit:cover;background:var(--paper);border:1px solid var(--line-2)}
+.mn{font-family:'Instrument Sans';font-weight:600;font-size:17.5px;letter-spacing:-.03em;line-height:1.18}
+.specs{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.sp{font:500 9.5px/1 'Instrument Sans';letter-spacing:.06em;text-transform:uppercase;padding:4px 6px;
+  border:1px solid var(--line);color:var(--mute);border-radius:2px}
+.sp.k{border-color:var(--ink);color:var(--ink)}
+.sp.e{border-color:var(--ember);color:var(--ember)}
+.sp.t{border-color:var(--teal);color:var(--teal);background:var(--teal-l)}
+.mp{text-align:right;white-space:nowrap}
+.mp .may{font-family:'Instrument Sans';font-weight:600;font-size:17px}
+.mp .pvp{font:400 11px 'Instrument Sans';color:var(--mute);margin-top:4px}
+.ar{width:22px;text-align:center;color:var(--mute);font-size:11px;transition:transform .16s}
+.mod.open .ar{transform:rotate(90deg);color:var(--ink)}
+
+/* ═══ matriz ═══ */
+.mx{display:none;border-top:1px solid var(--line)}
+.mod.open .mx{display:block}
+.mxs{overflow-x:auto;max-height:none}
+table.mtx thead th{position:sticky;top:0;z-index:3}
+table.mtx .stick{position:sticky;left:0;z-index:2;background:var(--card);
+  box-shadow:1px 0 0 var(--line-2)}
+table.mtx thead .stick{z-index:4;background:#F7F7F4}
+table.mtx tfoot .stick{background:#F7F7F4}
+table.mtx tbody tr:hover .stick{background:#FCFCFA}
+td.rmoney{font-family:'Instrument Sans';font-weight:600;font-size:13px;background:#FBFBF9}
+.curva{white-space:nowrap;text-align:center}
+.curva button{width:26px;height:24px;border:1px solid var(--line);border-radius:2px;
+  font:600 10.5px 'Instrument Sans';color:var(--mute);background:var(--card);margin:0 1px}
+.curva button:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+table{border-collapse:collapse;width:100%;min-width:620px}
+thead th{font:500 9.5px/1 'Instrument Sans';letter-spacing:.1em;text-transform:uppercase;color:var(--mute);
+  padding:11px 8px;text-align:center;background:#F7F7F4;border-bottom:1px solid var(--line);white-space:nowrap}
+thead th.l{text-align:left;padding-left:14px}
+tbody td{padding:9px 8px;border-bottom:1px solid var(--line-2);text-align:center;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#FCFCFA}
+td.l{text-align:left;padding-left:14px}
+
+/* fila con foto */
+.cw{display:flex;align-items:center;gap:11px}
+.cw img{width:52px;height:52px;object-fit:cover;border:1px solid var(--line-2);background:var(--paper);flex:none}
+.rn{font-family:'Instrument Sans';font-weight:600;font-size:14px;letter-spacing:-.01em}
+.rs{font:400 10px 'Instrument Sans';color:var(--mute);margin-top:3px}
+td.pr{font-family:'Instrument Sans';font-size:13px;white-space:nowrap;text-align:right;font-weight:600}
+td.pr small{display:block;color:var(--mute);font-weight:400;font-size:10px;margin-top:2px}
+
+/* promociones */
+.promo{display:inline-block;background:var(--ember);color:#fff;font-family:'Instrument Sans';
+  font-weight:700;font-size:11px;letter-spacing:.02em;padding:5px 8px;border-radius:2px;white-space:nowrap}
+.promo.mini{font-size:9.5px;padding:3px 5px}
+.promo.sp-pr{font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;padding:4px 7px}
+.cq.promo{background:var(--ember)}
+.mp .may.pr{color:var(--ember)}
+td.pr .pr-of{color:var(--ember)}
+/* aviso de promo dentro del producto abierto */
+.promoline{display:flex;align-items:center;gap:9px;padding:9px 14px;
+  background:#FCF1EC;border-bottom:1px solid var(--line-2);
+  font:400 12px 'Instrument Sans';color:#8A5A4A}
+.promoline b{font-weight:600;color:var(--ink)}
+.promoline .hasta{margin-left:auto;font-size:11.5px;opacity:.85}
+.pform{display:grid;grid-template-columns:1.6fr 1fr 1.6fr .7fr 1fr auto;gap:8px;align-items:center}
+.pform input,.pform select{padding:9px 10px;border:1px solid var(--line);border-radius:2px;
+  background:var(--paper);font-family:'Instrument Sans';width:100%}
+.pform input:focus,.pform select:focus{outline:none;border-color:var(--teal);background:#fff}
+@media(max-width:900px){.pform{grid-template-columns:1fr}}
+
+/* foto ampliable */
+.zoom{position:relative;padding:0;border:0;background:none;display:block;line-height:0;flex:none}
+.zoom img{transition:opacity .15s}
+.zoom .lupa{position:absolute;right:3px;bottom:3px;width:17px;height:17px;border-radius:2px;
+  background:rgba(16,16,19,.82);color:#fff;font-size:10px;display:grid;place-items:center;
+  opacity:0;transition:opacity .15s;font-family:'Instrument Sans'}
+.zoom:hover .lupa{opacity:1}
+.zoom:hover img{opacity:.9}
+.zoom:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.ph.zoom{width:74px;height:74px}
+.ph.zoom img{width:74px;height:74px;object-fit:cover;background:var(--paper);border:1px solid var(--line-2)}
+
+/* stepper */
+.stp{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:3px;background:var(--card);overflow:hidden}
+.stp.has{border-color:var(--teal);background:var(--teal-l)}
+.stp button{width:26px;height:32px;font-family:'Instrument Sans';font-weight:600;font-size:15px;color:var(--mute);
+  line-height:1;display:grid;place-items:center;flex:none}
+.stp button:hover:not(:disabled){background:var(--ink);color:#fff}
+.stp button:disabled{opacity:.28;cursor:not-allowed}
+.stp input{width:40px;height:32px;padding:0;text-align:center;border:none;background:transparent;
+  font-family:'Instrument Sans';font-weight:600;font-size:14px;-moz-appearance:textfield}
+.stp input::-webkit-outer-spin-button,.stp input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stp input:focus{outline:none;background:#fff}
+.stp.has input{color:var(--teal-d)}
+/* stock — se lee antes que el stepper */
+.stk{display:inline-flex;align-items:center;gap:5px;margin-bottom:7px;
+  font:700 12px/1 'Instrument Sans';letter-spacing:-.01em;
+  padding:5px 9px;border-radius:99px;background:#EDEDE8;color:var(--mute);border:1px solid var(--line)}
+.stk em{font-style:normal;font-weight:500;font-size:10.5px;opacity:.8}
+.stk i{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.stk.ok{background:var(--teal-l);color:var(--teal-d);border-color:#9FCCC5}
+.stk.low{background:#FDE7DE;color:#A8330C;border-color:#F0B49B}
+.stk.no{background:#F3F3EF;color:#A3A39B;border-color:var(--line-2)}
+.stk.no i{background:none;border:1.5px solid currentColor}
+td.cel{padding-top:11px;padding-bottom:11px}
+td.cel.no .stp{opacity:.5}
+tr.flash td{animation:flash 1.8s ease}
+@keyframes flash{0%,60%{background:#FFF3C4}100%{background:transparent}}
+td.tt{font-family:'Instrument Sans';font-weight:600;font-size:14px;background:#F7F7F4}
+tfoot td{background:#F7F7F4;color:var(--ink);font-family:'Instrument Sans';font-weight:600;font-size:13px;
+  padding:10px 8px;text-align:center;border-top:1px solid var(--line)}
+tfoot td.l{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:500;color:var(--mute)}
+
+/* acción por modelo */
+.mact{display:flex;align-items:center;gap:14px;padding:11px 14px;background:var(--ink);color:#fff;flex-wrap:wrap}
+.mact .ms{font:400 12.5px 'Instrument Sans';color:#9A9A92}
+.mact .ms b{color:#fff;font-weight:600}
+.mact .sp2{margin-left:auto;display:flex;gap:7px}
+.add{padding:9px 17px;background:var(--teal);color:#fff;font-weight:600;font-size:13.5px;border-radius:2px}
+.add:hover{background:var(--teal-d)}
+.add:disabled{background:#2E2E34;color:#6E6E66;cursor:not-allowed}
+.und{padding:9px 12px;border:1px solid #2E2E34;color:#9A9A92;border-radius:2px;font-size:13px}
+.und:hover{color:#fff;border-color:#4A4A52}
+
+.empty{background:var(--card);border:1px solid var(--line);padding:54px 20px;text-align:center}
+.empty .t{font-family:'Instrument Sans';font-weight:600;font-size:18px;letter-spacing:-.03em}
+.empty .d{color:var(--mute);margin-top:7px;max-width:430px;margin-left:auto;margin-right:auto}
+.empty button{margin-top:16px;padding:10px 18px;background:var(--ink);color:#fff;border-radius:2px;font-weight:600;font-size:13px}
+
+/* ═══ paneles ═══ */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:8px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--line);padding:13px 15px}
+.kpi .k{font:500 9.5px/1 'Instrument Sans';letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.kpi .v{font-family:'Instrument Sans';font-weight:600;font-size:21px;margin-top:9px}
+.kpi .v.e{color:var(--ember)} .kpi .v.t{color:var(--teal)}
+.panel{background:var(--card);border:1px solid var(--line);overflow-x:auto}
+.panel table{min-width:0}
+.panel td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line-2)}
+.panel th{text-align:left;padding-left:14px}
+.panel td.n,.panel th.n{text-align:right;padding-right:14px;font-family:'Instrument Sans'}
+.badge{display:inline-block;font:500 9.5px/1 'Instrument Sans';letter-spacing:.08em;text-transform:uppercase;
+  padding:5px 7px;border:1px solid var(--line);color:var(--mute);border-radius:2px}
+.badge.t{border-color:var(--teal);color:var(--teal);background:var(--teal-l)}
+.badge.e{border-color:var(--ember);color:var(--ember);background:#FCEEE9}
+.badge.k{border-color:var(--ink);color:var(--ink)}
+.track{display:flex;gap:2px;width:118px}
+.track i{flex:1;height:4px;background:var(--line)}
+.track i.d{background:var(--ink)} .track i.c{background:var(--teal)}
+.lk{color:var(--teal);font-weight:600;font-size:13.5px}
+.lk:hover{color:var(--teal-d)}
+
+/* ═══ pedido actual ═══ */
+.cartwrap{display:grid;grid-template-columns:1fr 320px;gap:14px;align-items:start}
+.grp{border-bottom:1px solid var(--line)}
+.grp:last-child{border-bottom:none}
+.gh{display:flex;align-items:center;gap:11px;padding:10px 14px;background:#F7F7F4;border-bottom:1px solid var(--line-2)}
+.gh img{width:34px;height:34px;object-fit:cover;border:1px solid var(--line-2)}
+.gh .gn{font-family:'Instrument Sans';font-weight:600;font-size:14.5px;letter-spacing:-.025em}
+.gh .gc{font:400 10px 'Instrument Sans';color:var(--mute);margin-left:auto}
+.ln{display:grid;grid-template-columns:1fr 118px 92px 96px 30px;gap:10px;align-items:center;
+  padding:9px 14px;border-bottom:1px solid var(--line-2)}
+.ln:last-child{border-bottom:none}
+.ln .li{display:flex;align-items:center;gap:10px}
+.ln .li img{width:40px;height:40px;object-fit:cover;border:1px solid var(--line-2);flex:none}
+.ln .d1{font-family:'Instrument Sans';font-size:13.5px;font-weight:600}
+.ln .d2{font:400 10px 'Instrument Sans';color:var(--mute);margin-top:2px}
+.ln .p1,.ln .p2{font-family:'Instrument Sans';text-align:right;font-size:13px}
+.ln .p1{color:var(--mute)} .ln .p2{font-weight:600}
+.ln .x{color:var(--mute);font-size:16px;line-height:1}
+.ln .x:hover{color:var(--ember)}
+.side{position:sticky;top:70px;display:grid;gap:10px}
+.box{background:var(--card);border:1px solid var(--line);padding:15px}
+.box h3{font-family:'Instrument Sans';font-weight:600;font-size:15px;letter-spacing:-.025em;margin-bottom:12px}
+.row{display:flex;justify-content:space-between;font-size:13.5px;padding:5px 0}
+.row span:last-child{font-family:'Instrument Sans'}
+.row.sub{font-size:12.5px;color:var(--mute);padding:3px 0}
+.row.big{border-top:1px solid var(--line);margin-top:7px;padding-top:10px;font-weight:600;font-size:15px}
+.row.rev{font-size:12.5px;color:var(--teal-d);padding:3px 0}
+.row.rev:first-of-type{margin-top:6px}
+.tacc{display:flex;gap:7px;flex-wrap:wrap}
+.empty button.alt{background:var(--card);color:var(--ink);border:1px solid var(--line);margin-left:6px}
+.box textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:2px;
+  background:var(--paper);margin-bottom:8px;resize:vertical;font-family:'Instrument Sans'}
+.box textarea:focus{outline:none;border-color:var(--teal);background:#fff}
+.wfull{width:100%;padding:11px;border-radius:2px;font-weight:600;font-size:13.5px}
+.wfull.p{background:var(--teal);color:#fff} .wfull.p:hover{background:var(--teal-d)}
+.wfull.p:disabled{background:var(--line);color:var(--mute);cursor:not-allowed}
+.wfull.s{border:1px solid var(--ink);color:var(--ink)} .wfull.s:hover{background:var(--ink);color:#fff}
+.warn{font:400 12px/1.5 'Instrument Sans';color:var(--ember);margin-bottom:10px}
+
+/* ═══ ticker + toast ═══ */
+#tk{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--ink);color:#fff;transform:translateY(102%);
+  transition:transform .22s cubic-bezier(.3,.8,.4,1)}
+#tk.on{transform:none}
+#tk .prog{height:2px;background:#2E2E34}
+#tk .prog i{display:block;height:100%;background:var(--teal);width:0;transition:width .25s}
+#tk .prog i.full{background:var(--ember)}
+#tk .in{display:flex;align-items:center;gap:26px;padding:12px 22px;max-width:1340px;margin:0 auto;flex-wrap:wrap}
+#tk .u{white-space:nowrap}
+#tk .u .k{font:500 9px/1 'Instrument Sans';letter-spacing:.16em;text-transform:uppercase;color:#75756D}
+#tk .u .v{font-family:'Instrument Sans';font-weight:600;font-size:18px;margin-top:5px}
+#tk .u .v.big{font-size:22px}
+#tk .note{font:400 12px/1.4 'Instrument Sans';color:#E8A78C;flex:1;min-width:160px}
+#tk .acts{margin-left:auto;display:flex;gap:7px}
+.ghost{padding:10px 13px;border:1px solid #2E2E34;color:#9A9A92;border-radius:2px;font-size:13px}
+.ghost:hover{color:#fff;border-color:#4A4A52}
+.send{padding:10px 20px;background:var(--teal);color:#fff;font-weight:600;border-radius:2px;font-size:13.5px}
+.send:hover{background:var(--teal-d)}
+#toast{position:fixed;right:22px;bottom:96px;z-index:60;display:grid;gap:7px;pointer-events:none}
+.ts{background:var(--ink);color:#fff;border-left:3px solid var(--teal);padding:11px 15px;border-radius:2px;
+  font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.22);animation:up .2s ease}
+@keyframes up{from{opacity:0;transform:translateY(8px)}}
+
+/* ═══ lightbox ═══ */
+#lb{position:fixed;inset:0;z-index:80;background:rgba(12,12,14,.94);display:none;
+  flex-direction:column;padding:14px;overflow:hidden}
+#lb.on{display:flex}
+#lb .lbh,#lb .lbth{flex:none}
+#lb .lbm{flex:1 1 auto}
+#lb .lbh{display:flex;align-items:center;gap:14px;color:#fff;padding:6px 6px 12px}
+#lb .lbh .t{font-family:'Instrument Sans';font-weight:600;font-size:17px;letter-spacing:-.03em}
+#lb .lbh .s{font:400 11px 'Instrument Sans';color:#8A8A82;margin-top:3px}
+#lb .lbh .c{margin-left:auto;font:500 11px 'Instrument Sans';color:#8A8A82;letter-spacing:.1em}
+#lb .cerrar{width:36px;height:36px;border:1px solid #33333A;border-radius:2px;color:#C9C9C1;
+  font-size:19px;display:grid;place-items:center;flex:none}
+#lb .cerrar:hover{background:#fff;color:var(--ink);border-color:#fff}
+#lb .lbm{position:relative;display:flex;align-items:center;justify-content:center;
+  min-height:0;overflow:hidden}
+#lb .lbm img{display:block;width:auto;height:auto;
+  max-width:100%;max-height:100%;object-fit:contain;background:#fff}
+#lb .lbwrap{display:flex;align-items:center;justify-content:center;
+  width:100%;height:100%;min-height:0;min-width:0}
+#lb .nav{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;
+  pointer-events:none;padding:0 6px}
+#lb .nav button{pointer-events:auto;width:46px;height:64px;background:rgba(16,16,19,.6);
+  border:1px solid #33333A;color:#fff;font-size:20px;border-radius:2px}
+#lb .nav button:hover{background:#fff;color:var(--ink)}
+#lb .lbth{display:flex;gap:7px;justify-content:center;padding:14px 6px 4px;overflow-x:auto}
+#lb .lbth img{width:62px;height:62px;object-fit:cover;background:#fff;border:2px solid transparent;
+  opacity:.5;cursor:pointer;flex:none}
+#lb .lbth img.on,#lb .lbth img:hover{opacity:1;border-color:var(--teal)}
+
+@media(max-width:1180px){ .cats{grid-template-columns:repeat(3,1fr)} }
+/* ═══ carga rápida por SKU ═══ */
+.modal{position:fixed;inset:0;z-index:76;background:rgba(12,12,14,.62);display:none;
+  align-items:flex-start;justify-content:center;padding:50px 16px;overflow-y:auto}
+.modal.on{display:flex}
+#pad{position:fixed;inset:0;z-index:75;background:rgba(12,12,14,.6);display:none;
+  align-items:flex-start;justify-content:center;padding:60px 16px;overflow-y:auto}
+#pad.on{display:flex}
+.padbox{background:var(--card);border:1px solid var(--ink);width:100%;max-width:680px;
+  box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.padh{display:flex;align-items:flex-start;gap:14px;padding:18px 20px;border-bottom:1px solid var(--line)}
+.padh h3{font-family:'Instrument Sans';font-weight:600;font-size:19px;letter-spacing:-.03em}
+.padh p{font-size:12.5px;color:var(--mute);margin-top:5px}
+.padh .x{margin-left:auto;width:32px;height:32px;border:1px solid var(--line);border-radius:2px;
+  font-size:17px;color:var(--mute);flex:none}
+.padh .x:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+.padb{padding:18px 20px}
+.padb textarea{width:100%;min-height:130px;padding:11px 12px;border:1px solid var(--line);
+  border-radius:2px;background:var(--paper);font-family:'Instrument Sans';font-size:13px;resize:vertical}
+.padb textarea:focus{outline:none;border-color:var(--teal);background:#fff}
+.padej{font:400 11.5px/1.7 'Instrument Sans';color:var(--mute);margin-top:9px;
+  background:var(--paper);border-left:3px solid var(--line);padding:9px 12px}
+.padej b{color:var(--ink);font-weight:600}
+.padok{margin-top:14px;padding:8px 11px;background:var(--teal-l);border:1px solid #9FCCC5;
+  color:var(--teal-d);font-size:12.5px}
+.paderr{margin-top:12px;padding:8px 11px;background:#FDE7DE;border:1px solid #F0B49B;
+  color:#A8330C;font-size:12.5px}
+table.padt{width:100%;min-width:0;margin-top:6px;font-size:12.5px}
+table.padt td{padding:6px 8px;border-bottom:1px solid var(--line-2);text-align:left}
+table.padt td.n{text-align:right}
+.warnx{color:var(--ember);font-size:11.5px}
+.padf{display:flex;gap:8px;padding:14px 20px;border-top:1px solid var(--line);background:#FBFBF9}
+.padf .add{margin-left:auto}
+
+/* ═══ panel del representante ═══ */
+.kpi.kb{text-align:left;cursor:pointer;transition:border-color .15s}
+.kpi.kb:hover{border-color:var(--ink)}
+.kpi.kb.on{border-color:var(--ink);background:var(--ink)}
+.kpi.kb.on .k{color:#9A9A92} .kpi.kb.on .v{color:#fff}
+.filtroon{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);
+  padding:9px 13px;margin-bottom:10px;font-size:13px}
+.filtroon button{margin-left:auto;font:600 12.5px 'Instrument Sans';color:var(--teal)}
+td.acc{white-space:nowrap;text-align:right}
+.mini{padding:6px 10px;border:1px solid var(--line);border-radius:2px;background:var(--card);
+  font:600 12px 'Instrument Sans';color:var(--mute);margin-left:5px}
+.mini:hover{border-color:var(--ink);color:var(--ink)}
+.mini.ok{background:var(--teal);border-color:var(--teal);color:#fff}
+.mini.ok:hover{background:var(--teal-d);border-color:var(--teal-d);color:#fff}
+.mini.no:hover{border-color:var(--ember);color:var(--ember)}
+.und2.ok{background:var(--teal);border-color:var(--teal);color:#fff}
+.und2.ok:hover{background:var(--teal-d);color:#fff}
+.und2.no:hover{border-color:var(--ember);color:var(--ember)}
+.remsep{flex:1}
+.mot{font:400 11px 'Instrument Sans';color:var(--ember);margin-top:4px;max-width:190px;line-height:1.4}
+.mas{padding:12px 14px;text-align:center;font-size:12.5px;color:var(--mute);background:#FBFBF9}
+.remfac{margin-top:12px;padding:11px 14px;background:var(--teal-l);border-left:3px solid var(--teal);font-size:13.5px}
+.remfac .k{display:block;font:500 9px/1 'Instrument Sans';letter-spacing:.14em;
+  text-transform:uppercase;color:var(--teal-d);margin-bottom:5px;opacity:.8}
+.remnota.rj{border-left-color:var(--ember);background:#FDE7DE}
+/* ajuste unitario en la tabla de stock */
+.edt{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.edt .stp{flex:none}
+.edt .stp input{width:54px}
+.rap{display:flex;gap:3px}
+.rap button{padding:5px 7px;border:1px solid var(--line);border-radius:2px;background:var(--card);
+  font:600 10.5px 'Instrument Sans';color:var(--mute)}
+.rap button:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+tr.tocada td{background:#FBF8E9}
+
+.stkprev{max-height:280px;overflow:auto;border:1px solid var(--line-2);margin-top:6px}
+.stkprev thead th{position:sticky;top:0;background:#F7F7F4;font:500 9px 'Instrument Sans';
+  letter-spacing:.1em;text-transform:uppercase;color:var(--mute);padding:7px 8px;text-align:left}
+.stkprev th.n{text-align:right}
+b.sube{color:var(--teal-d)} b.baja{color:var(--ember)}
+.padb select{padding:9px 11px;border:1px solid var(--line);border-radius:2px;background:var(--paper);
+  font-family:'Instrument Sans';margin-bottom:10px;width:100%}
+.mform{display:grid;gap:10px}
+.mform label{display:block;font:500 9px/1 'Instrument Sans';letter-spacing:.13em;
+  text-transform:uppercase;color:var(--mute);margin-bottom:6px}
+.mform input,.mform textarea{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:2px;
+  background:var(--paper);font-family:'Instrument Sans';font-size:13.5px}
+.mform input:focus,.mform textarea:focus{outline:none;border-color:var(--teal);background:#fff}
+.mform .dos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ═══ alta manual de producto ═══ */
+.tchips{display:flex;flex-wrap:wrap;gap:6px}
+.tch{padding:8px 12px;border:1px solid var(--line);border-radius:2px;background:var(--card);
+  font:600 12.5px 'Instrument Sans';color:var(--mute)}
+.tch:hover:not(:disabled){border-color:var(--ink);color:var(--ink)}
+.tch.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.tch:disabled{opacity:.55;cursor:default}
+.tch.on:disabled{opacity:1;background:var(--ink);border-color:var(--ink)}
+.tadd{display:flex;gap:7px;margin-top:8px}
+.tadd input{flex:1;padding:9px 11px;border:1px solid var(--line);border-radius:2px;
+  background:var(--paper);font-family:'Instrument Sans';font-size:13px}
+.tadd input:focus{outline:none;border-color:var(--teal);background:#fff}
+.tadd button{padding:9px 13px;border:1px solid var(--line);border-radius:2px;background:var(--card);
+  font:600 12.5px 'Instrument Sans';color:var(--mute)}
+.tadd button:hover{border-color:var(--ink);color:var(--ink)}
+.mform select{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:2px;
+  background:var(--paper);font-family:'Instrument Sans';font-size:13.5px}
+.mform select:focus{outline:none;border-color:var(--teal);background:#fff}
+.almodo{display:flex;gap:0;border:1px solid var(--line);border-radius:2px;overflow:hidden;margin-bottom:16px}
+.almodo button{flex:1;padding:11px;font:600 13px 'Instrument Sans';color:var(--mute);background:var(--card)}
+.almodo button.on{background:var(--ink);color:#fff}
+.nvo{display:inline-block;margin-left:7px;font:700 8.5px/1 'Instrument Sans';letter-spacing:.09em;
+  text-transform:uppercase;background:var(--teal);color:#fff;padding:3px 5px;border-radius:2px;vertical-align:1px}
+
+/* ═══ confirmar envío ═══ */
+#cf{position:fixed;inset:0;z-index:78;background:rgba(12,12,14,.62);display:none;
+  align-items:center;justify-content:center;padding:24px}
+#cf.on{display:flex}
+.cfbox{background:var(--card);border:1px solid var(--ink);width:100%;max-width:420px;
+  box-shadow:0 24px 60px rgba(0,0,0,.32)}
+.cfh{padding:22px 22px 4px}
+.cfh h3{font-family:'Instrument Sans';font-weight:600;font-size:20px;letter-spacing:-.035em}
+.cfh p{font-size:13px;color:var(--mute);margin-top:7px;line-height:1.5}
+.cfb{padding:16px 22px 4px}
+.cfr{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;font-size:13.5px}
+.cfr b{font-family:'Instrument Sans';font-weight:600}
+.cfr.tot{border-top:1px solid var(--ink);margin-top:10px;padding-top:12px;font-size:15px}
+.cfr.tot b{font-size:20px;letter-spacing:-.03em}
+.cfl{margin:8px 0;padding:10px 12px;background:var(--paper);border:1px solid var(--line-2)}
+.cfi{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:3px 0;color:var(--mute)}
+.cfi b{font-family:'Instrument Sans';font-weight:600;color:var(--ink);min-width:88px;text-align:right}
+.cfi .m{min-width:52px;text-align:right}
+.cff{display:flex;gap:8px;padding:18px 22px 22px}
+.cff button{flex:1;padding:12px;border-radius:2px;font-weight:600;font-size:13.5px}
+.cff .no{border:1px solid var(--line);color:var(--mute)}
+.cff .no:hover{border-color:var(--ink);color:var(--ink)}
+.cff .si{background:var(--teal);color:#fff}
+.cff .si:hover{background:var(--teal-d)}
+
+/* ═══ remito ═══ */
+.rem{background:#fff;border:1px solid var(--line);padding:30px 32px;max-width:940px}
+.remh{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;
+  padding-bottom:20px;border-bottom:2px solid var(--ink)}
+.remlogo{font-family:'Instrument Sans';font-weight:600;font-size:26px;letter-spacing:-.05em}
+.remlogo i{color:var(--teal);font-style:normal}
+.remsub{font:400 12px 'Instrument Sans';color:var(--mute);margin-top:5px}
+.remnro{text-align:right}
+.remnro .k{font:500 9px/1 'Instrument Sans';letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.remnro .v{font-family:'Instrument Sans';font-weight:600;font-size:26px;letter-spacing:-.03em;margin-top:4px}
+.remnro .d{font-family:'Instrument Sans';font-size:13px;margin-top:3px}
+.remdatos{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;
+  padding:16px 0;border-bottom:1px solid var(--line)}
+.remdatos .k{display:block;font:500 9px/1 'Instrument Sans';letter-spacing:.14em;
+  text-transform:uppercase;color:var(--mute);margin-bottom:5px}
+.remdatos b{font-family:'Instrument Sans';font-weight:600;font-size:13.5px}
+table.remt{width:100%;min-width:0;border-collapse:collapse;margin-top:6px}
+table.remt th{font:500 9px/1 'Instrument Sans';letter-spacing:.13em;text-transform:uppercase;
+  color:var(--mute);text-align:left;padding:12px 8px;border-bottom:1px solid var(--ink);background:none}
+table.remt th.n,table.remt td.n{text-align:right}
+table.remt td{padding:10px 8px;border-bottom:1px solid var(--line-2);font-size:13.5px;vertical-align:top}
+table.remt td.sku{font-weight:700;letter-spacing:-.01em}
+table.remt td.cant{font-family:'Instrument Sans';font-weight:700;font-size:15px}
+table.remt td.tot{font-family:'Instrument Sans';font-weight:600}
+table.remt .colx{display:block;font:400 11px 'Instrument Sans';color:var(--mute);margin-top:2px}
+table.remt tfoot td{border-bottom:none;padding:7px 8px;font-family:'Instrument Sans'}
+table.remt tfoot td.k{font:500 9px/1 'Instrument Sans';letter-spacing:.13em;
+  text-transform:uppercase;color:var(--mute)}
+table.remt tfoot tr:first-child td{border-top:1px solid var(--ink);padding-top:12px}
+table.remt tfoot tr.big td{font-weight:700;font-size:18px;border-top:1px solid var(--line);padding-top:11px}
+.remnota{margin-top:18px;padding:13px 15px;background:var(--paper);border-left:3px solid var(--teal);font-size:13.5px}
+.remnota .k{display:block;font:500 9px/1 'Instrument Sans';letter-spacing:.14em;
+  text-transform:uppercase;color:var(--mute);margin-bottom:6px}
+.rempie{margin-top:22px;padding-top:14px;border-top:1px solid var(--line-2);
+  font:400 11.5px 'Instrument Sans';color:var(--mute)}
+.remacc{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;max-width:940px}
+.und2{padding:10px 15px;border:1px solid var(--line);background:var(--card);border-radius:2px;
+  font-size:13px;font-weight:500}
+.und2:hover{border-color:var(--ink)}
+.remacc .add{margin-left:auto}
+@media print{
+  header,.back,.noprint,#tk,#toast{display:none!important}
+  body{background:#fff} main{padding:0;max-width:none}
+  .rem{border:none;padding:0;max-width:none}
+}
+
+@media(max-width:980px){ .cartwrap{grid-template-columns:1fr} .side{position:static} }
+@media(max-width:900px){
+  #login{grid-template-columns:1fr} #login .art{display:none}
+  .hrow{height:auto;flex-wrap:wrap;padding:12px 14px;gap:12px}
+  nav{order:3;width:100%;margin:0} .hright{margin-left:auto}
+  main{padding:16px 12px 150px}
+  .title .sub{display:none}
+  .mh{grid-template-columns:54px 1fr auto;gap:11px} .ph{width:54px;height:54px}
+  .mp{grid-column:2/4;text-align:left} .ar{display:none}
+  .ln{grid-template-columns:1fr 110px 90px 26px;gap:8px} .ln .p1{display:none}
+  #lb .nav button{width:38px;height:54px} #lb .lbth img{width:50px;height:50px}
+  .qsw{width:100%;order:4;margin:0} .hright{margin-left:auto}
+  .cats{grid-template-columns:repeat(2,1fr);gap:8px}
+  #toast{right:12px;left:12px;bottom:150px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="art"><div class="rings"></div><div class="word">Pedidos<br>Mayoristas<em>Latinoamérica</em></div></div>
+  <div class="form"><div class="lbox">
+    <h2>Acceso distribuidores</h2>
+    <p>Cargá tu pedido con precios mayoristas y stock en vivo.</p>
+    <div class="f"><label>Email</label><input id="em" type="email" autocomplete="username" placeholder="pedidos@tuempresa.com"></div>
+    <div class="f"><label>Contraseña</label><input id="pw" type="password" autocomplete="current-password"></div>
+    <button class="go" onclick="entrar()">Entrar</button>
+    <div id="lerr"></div>
+    <div class="hint">Demo — <b>demo</b> / <b>demo</b> como mayorista.<br><b>admin</b> / <b>admin</b> para el panel del representante.</div>
+  </div></div>
+</div>
+
+<div id="app">
+  <header><div class="hrow">
+    <div class="logo">Balling<i>.</i></div>
+    <div class="tag">B2B LatAm</div>
+    <nav id="nav"></nav>
+    <div class="qsw" id="qsw" style="display:none">
+      <span class="ic">⌕</span>
+      <input id="qs" type="search" autocomplete="off" placeholder="Buscar por SKU o modelo"
+        oninput="qsBuscar()" onkeydown="qsTecla(event)" onblur="setTimeout(qsCerrar,150)">
+      <span class="kbd">/</span>
+      <div id="qsr"></div>
+    </div>
+    <div class="hright">
+      <div class="syncw" id="syncw" style="display:none">
+        <button class="sync local" id="sync" onclick="abrirCfg()"><i>○</i>Solo en esta PC</button>
+      </div>
+      <div class="acct"><div class="a" id="who"></div><div class="b" id="sub"></div></div>
+      <button class="out" onclick="location.reload()">Salir</button>
+    </div>
+  </div></header>
+  <main id="view"></main>
+</div>
+
+<div id="tk">
+  <div class="prog"><i id="pf" style="width:100%"></i></div>
+  <div class="in">
+    <div class="u"><div class="k">Unidades</div><div class="v" id="tu">0</div></div>
+    <div class="u"><div class="k">SKUs</div><div class="v" id="ts">0</div></div>
+    <div class="u"><div class="k">Neto mayorista</div><div class="v" id="tn">0</div></div>
+    <div class="u"><div class="k">Total c/IVA</div><div class="v big" id="tt">0</div></div>
+    <div class="note" id="tmsg"></div>
+    <div class="acts">
+      <button class="ghost" onclick="vaciar()">Vaciar</button>
+      <button class="send" onclick="ir('pedido')">Ver pedido</button>
+    </div>
+  </div>
+</div>
+<div id="lb" role="dialog" aria-modal="true" aria-label="Foto del producto">
+  <div class="lbh">
+    <div><div class="t" id="lbt"></div><div class="s" id="lbs"></div></div>
+    <div class="c" id="lbc"></div>
+    <button class="cerrar" onclick="cerrarFoto()" aria-label="Cerrar">×</button>
+  </div>
+  <div class="lbm">
+    <div id="lbi" class="lbwrap"></div>
+    <div class="nav" id="lbn">
+      <button onclick="pasarFoto(-1)" aria-label="Anterior">‹</button>
+      <button onclick="pasarFoto(1)" aria-label="Siguiente">›</button>
+    </div>
+  </div>
+  <div class="lbth" id="lbth"></div>
+</div>
+<div id="rc" class="modal">
+  <div class="padbox" style="max-width:440px">
+    <div class="padh"><div><h3>Rechazar pedido</h3>
+      <p>El motivo le llega al mayorista junto con el rechazo.</p></div>
+      <button class="x" onclick="cerrarRechazo()">×</button></div>
+    <div class="padb"><div class="mform">
+      <div><label>Motivo</label>
+        <textarea id="rcm" rows="3" placeholder="Ej. sin stock de los talles pedidos; cuenta con saldo vencido"></textarea></div>
+    </div></div>
+    <div class="padf"><button class="und2" onclick="cerrarRechazo()">Cancelar</button>
+      <button class="und2 no" style="margin-left:auto" onclick="confirmarRechazo()">Rechazar pedido</button></div>
+  </div>
+</div>
+
+<div id="fc" class="modal">
+  <div class="padbox" style="max-width:460px">
+    <div class="padh"><div><h3>Cargar factura</h3>
+      <p id="fct"></p></div><button class="x" onclick="cerrarFactura()">×</button></div>
+    <div class="padb"><div class="mform">
+      <div><label>Número de factura</label>
+        <input id="fcn" placeholder="A-0001-00004512" autocomplete="off"></div>
+      <div class="dos">
+        <div><label>Fecha</label><input id="fcf" type="date"></div>
+        <div><label>Importe total</label><input id="fci" type="number" min="0" step="0.01"></div>
+      </div>
+    </div></div>
+    <div class="padf"><button class="und2" onclick="cerrarFactura()">Cancelar</button>
+      <button class="und2 ok" style="margin-left:auto" onclick="guardarFactura()">Guardar factura</button></div>
+  </div>
+</div>
+
+<div id="ev" class="modal">
+  <div class="padbox" style="max-width:460px">
+    <div class="padh"><div><h3>Marcar como enviado</h3>
+      <p id="evtit"></p></div><button class="x" onclick="cerrarEnvio()">×</button></div>
+    <div class="padb"><div class="mform">
+      <div><label>Transporte</label><input id="evt" placeholder="Andreani, Cruz del Sur, retira…"></div>
+      <div class="dos">
+        <div><label>Guía / seguimiento</label><input id="evg" placeholder="opcional"></div>
+        <div><label>Fecha de despacho</label><input id="evf" type="date"></div>
+      </div>
+    </div></div>
+    <div class="padf"><button class="und2" onclick="cerrarEnvio()">Cancelar</button>
+      <button class="und2 ok" style="margin-left:auto" onclick="guardarEnvio()">Marcar enviado</button></div>
+  </div>
+</div>
+
+<div id="cg" class="modal">
+  <div class="padbox" style="max-width:600px">
+    <div class="padh">
+      <div><h3>Guardar entre computadoras</h3>
+        <p>Sin base, los cambios quedan en este navegador. Conectá una y el estado se comparte.</p></div>
+      <button class="x" onclick="cerrarCfg()">×</button>
+    </div>
+    <div class="padb">
+      <div class="cgpaso"><b>1</b><div>Creá un proyecto gratis en <b>supabase.com</b>.</div></div>
+      <div class="cgpaso"><b>2</b><div>En el SQL editor, pegá y ejecutá esto:
+        <div class="cgcode">create table estado (
+  id text primary key,
+  data jsonb not null,
+  actualizado timestamptz default now()
+);
+alter table estado enable row level security;
+create policy "portal" on estado for all
+  using (true) with check (true);</div></div></div>
+      <div class="cgpaso"><b>3</b><div>Copiá de <b>Settings → API</b> la Project URL y la clave <b>anon public</b>, y pegalas acá abajo.</div></div>
+      <div class="mform" style="margin-top:14px">
+        <div><label>Project URL</label><input id="cgu" placeholder="https://xxxx.supabase.co" autocomplete="off"></div>
+        <div><label>Anon public key</label><input id="cgk" placeholder="eyJhbGciOi…" autocomplete="off"></div>
+      </div>
+      <div class="padej">La clave anon es pública por diseño. Aun así, este portal es de uso interno:
+        no publiques el link fuera de tus mayoristas.</div>
+    </div>
+    <div class="padf">
+      <button class="und2 no" onclick="desconectarCfg()">Desconectar</button>
+      <button class="und2" style="margin-left:auto" onclick="cerrarCfg()">Cancelar</button>
+      <button class="add" onclick="guardarCfg()">Conectar</button>
+    </div>
+  </div>
+</div>
+
+<div id="al" class="modal">
+  <div class="padbox" style="max-width:620px">
+    <div class="padh">
+      <div><h3>Nuevo producto</h3>
+        <p>Cargalo a mano, sin planilla. Queda disponible en el catálogo al instante.</p></div>
+      <button class="x" onclick="cerrarAlta()">×</button>
+    </div>
+    <div class="padb">
+      <div class="almodo">
+        <button id="albn" class="on" onclick="$('almodo').value='nuevo';this.classList.add('on');$('albc').classList.remove('on');pintarAlta()">Modelo nuevo</button>
+        <button id="albc" onclick="$('almodo').value='colorway';this.classList.add('on');$('albn').classList.remove('on');pintarAlta()">Colorway de un modelo existente</button>
+      </div>
+      <input type="hidden" id="almodo" value="nuevo">
+      <div id="albody"></div>
+    </div>
+    <div class="padf">
+      <button class="und2" onclick="cerrarAlta()">Cancelar</button>
+      <button class="add" onclick="guardarAlta()">Crear producto</button>
+    </div>
+  </div>
+</div>
+
+<div id="stk" class="modal">
+  <div class="padbox" style="max-width:760px">
+    <div class="padh"><div><h3>Carga masiva de stock</h3>
+      <p>Descargá la planilla, editá la columna Stock en Excel y pegá todo acá. También podés escribir a mano.</p></div>
+      <button class="x" onclick="cerrarStk()">×</button></div>
+    <div class="padb">
+      <select id="stkm">
+        <option value="set">Reemplazar el stock actual por estos valores</option>
+        <option value="sumar">Sumar estas cantidades al stock actual (reposición)</option>
+      </select>
+      <textarea id="stkt" placeholder="SBA97LB;36,5&quot;;24&#10;SBA97LB;37.5&quot;;18&#10;VGV2SBK;M;40&#10;LST250;12"></textarea>
+      <div class="padej">Formato: <b>SKU · talle · cantidad</b>. Acepta punto y coma, coma, tabulación o espacios,
+        y descarta la fila de encabezado. Si el producto tiene un solo talle podés omitirlo.</div>
+      <div id="stkr"></div>
+    </div>
+    <div class="padf"><button class="und2" onclick="bajarStock()">Descargar planilla</button>
+      <button class="und2" onclick="validarStk()">Validar</button>
+      <button class="add" id="stkap" onclick="aplicarStk()" disabled>Aplicar cambios</button></div>
+  </div>
+</div>
+
+<div id="cf" role="dialog" aria-modal="true">
+  <div class="cfbox">
+    <div class="cfh">
+      <h3>¿Confirmás el envío?</h3>
+      <p>Una vez enviado, el pedido pasa al representante y ya no vas a poder editarlo.</p>
+    </div>
+    <div class="cfb" id="cfb"></div>
+    <div class="cff">
+      <button class="no" onclick="cerrarConf()">Volver a revisar</button>
+      <button class="si" id="cfok" onclick="confirmarEnvio()">Sí, enviar pedido</button>
+    </div>
+  </div>
+</div>
+<div id="pad">
+  <div class="padbox">
+    <div class="padh">
+      <div><h3>Carga rápida por SKU</h3>
+        <p>Pegá tu planilla o escribí una línea por producto. Se valida contra stock al instante.</p></div>
+      <button class="x" onclick="cerrarPad()" aria-label="Cerrar">×</button>
+    </div>
+    <div class="padb">
+      <textarea id="padt" placeholder="SBA97LB  37.5&quot;  6&#10;VGV2SBK  M  12&#10;LST250  4"></textarea>
+      <div class="padej">Formato: <b>SKU · talle · cantidad</b>, separados por coma, punto y coma, tabulación o espacios.
+        Si el producto tiene un solo talle podés omitirlo.</div>
+      <div id="padr"></div>
+    </div>
+    <div class="padf">
+      <button class="und2" onclick="cerrarPad()">Cancelar</button>
+      <button class="und2" onclick="procesarPad()">Validar y cargar</button>
+      <button class="add" onclick="aplicarPad()">Ver pedido</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   Catálogo Balling LatAm
+   SKU y precios: LISTA_PRECIOS_BALLING_AGOSTO.xlsx (ARS)
+     · may  = PRECIO S/IVA  (lo que paga el mayorista)
+     · pvp  = PRECIO PUBLICO (sugerido de venta al público)
+   Fotos: ballinghockey.com / ballinghockey.com.ar
+   Palos: solo las 4 colecciones de la lista — Bloom, Ardeeno,
+   Classics y Neo Wood Standard. Lo que no entra ahí, no va.
+   ═══════════════════════════════════════════════════════════════════ */
+const B="https://cdn.shopify.com/s/files/1/0724/4896/6972/";
+const BAR="https://ballinghockey.com.ar/cdn/shop/files/";
+
+const CATS=[
+ {id:'palos',nombre:'Palos',desc:'Bloom, Ardeeno, Classics y madera',
+  img:BAR+"Ball-Ardeeno-Power_Series_97-Lowbow_Iris-1200x1800-Slide_01-optimized.jpg"},
+ {id:'bolsos',nombre:'Bolsos',desc:'Fundas y mochilas',
+  img:B+"files/ball-alter-2-large-stickbag-taupe-1.jpg"},
+ {id:'accesorios',nombre:'Accesorios',desc:'Protección, grips y essentials',
+  img:B+"files/Ball-LongGlove-Blue-Front-1200x1800_f684acfe-986f-4e7a-a96b-417fb6a25242.jpg"},
+ {id:'calzado',nombre:'Calzado',desc:'RISER',
+  img:B+"files/2024.12.11-Balling-Zapatillas_45_09.jpg"},
+ {id:'padel',nombre:'Padel',desc:'Palas de padel',
+  img:BAR+"Ball-Padel-Diamond-Carbon_3_1200x1800_ccbeed73-05a0-4058-ba3d-3cf9a79beddd.jpg"}
+];
+
+/* talles según la lista */
+const T2=['36,5"','37.5"'];
+const T4=['34"','35"','36,5"','37.5"'];
+const TW=['30"','32"','34"','35"','36,5"','37,5"'];
+const TG=['XXS','XS','S','M','L'];
+const TU=['Único'];
+const TCAL=['35','36','37','38','39','40','41','42','43','44'];
+
+const CAT=[
+/* ══════════ PALOS · BLOOM (edición limitada) ══════════
+   Bloom no figura en la lista de agosto; se toma el precio del
+   escalón Power 97 hasta que el representante confirme el suyo. */
+{id:"bl97",ent:"Inmediato",cat:"palos",col:"Bloom",nombre:"Bloom 97",comp:"97% Carbon",talles:T2,may:269000,pvp:564900,
+ filas:[
+  {n:"Lowbow Marigold",sku:"SBB97LB-MAR",img:B+"files/ball-bloom-power-97-lowbow-marigold-1.jpg"},
+  {n:"Lowbow Speedwell",sku:"SBB97LB-SPE",img:B+"files/ball-bloom-power-97-lowbow-speedwell-1.jpg"},
+  {n:"Ultralow Marigold",sku:"SBB97UL-MAR",img:B+"files/ball-bloom-power-97-ultralow-marigold-1.jpg"},
+  {n:"Ultralow Hollyhock",sku:"SBB97UL-HOL",img:B+"files/ball-bloom-power-97-ultralow-hollyhock-1.jpg"}]},
+
+/* ══════════ PALOS · ARDEENO 25 ══════════ */
+{id:"ar97",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Power 97",comp:"97% Carbon",talles:T2,may:269000,pvp:564900,
+ filas:[
+  {n:"Lowbow Iris",sku:"SBA97LB",img:BAR+"Ball-Ardeeno-Power_Series_97-Lowbow_Iris-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Ultralow Lilac",sku:"SBA97UL",img:BAR+"Ball-Ardeeno-Power_Series_97-Ultralow_Liliac-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Probow Ashen",sku:"SBA97PB",img:BAR+"Ball-Ardeeno-Power_Series_97-Probow_Ashen-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Ultralow Groove Tephra",sku:"SBA97UG",img:BAR+"Ball-Ardeeno-Power_Series_97-Ultralow_Groove_Tephra-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Latebow Tyrian",sku:"SBA97LT",img:BAR+"Ball-Ardeeno-Power_Series_97-Latebow_Tyrianl-1200x1800-Slide_01-optimized.jpg"}]},
+
+{id:"ar75",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Control 75",comp:"75% Carbon",talles:T2,may:217900,pvp:457590,
+ filas:[
+  {n:"Lowbow Haze",sku:"SBA75LB",img:BAR+"Ball-Ardeeno-Control_Series_75-Lowbow_Haze-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Probow Jade",sku:"SBA75PB",img:BAR+"Ball-Ardeeno-Control_Series_75-Probow_Jade-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Ultralow Mint",sku:"SBA75UL",img:BAR+"Ball-Ardeeno-Control_Series_75-Ultralow_Mint-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Ultralow Groove Sage",sku:"SBA75UG",img:BAR+"Ball-Ardeeno-Control_Series_75-Ultralow_Groove_Sage-1200x1800-Slide_01-optimized.jpg"}]},
+
+{id:"ar55",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Balance 55",comp:"55% Carbon",talles:T2,may:194250,pvp:407925,
+ filas:[
+  {n:"Lowbow Vinca",sku:"SBA55LB",img:BAR+"Ball-Ardeeno-Balance_Series_55-Lowbow_Vinca-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Probow Mauve",sku:"SBA55PB",img:BAR+"Ball-Ardeeno-Balance_Series_55-Probow_Mauve-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Latebow Umber",sku:"SBA55LT375",img:BAR+"Ball-Ardeeno-Balance_Series_55-Latebow_Umber-1200x1800-Slide_01-optimized.jpg"}]},
+
+{id:"arg40",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Goalie 40",comp:"40% Carbon · Arquero",talles:T2,may:180000,pvp:378000,
+ filas:[
+  {n:"Midbow Scarlet",sku:"SBAG40MB",img:BAR+"Ball-Ardeeno-Goalie_Series_40-Midbow_Scarlet-1200x1800-Slide_01-optimized.jpg"}]},
+
+{id:"ar40",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Evo 40",comp:"40% Carbon",talles:T2,may:165000,pvp:346500,
+ filas:[
+  {n:"Probow Onyx",sku:"SBA40PB",img:BAR+"Ball-Ardeeno-Evo_Series_40-Probow_Onix-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Lowbow Tide",sku:"SBA40LB",img:BAR+"Ball-Ardeeno-Evo_Series_40-Lowbow_Tide-1200x1800-Slide_01-optimized.jpg"}]},
+
+{id:"ar25",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Neo 25",comp:"25% Carbon",talles:T4,may:134500,pvp:282450,
+ filas:[
+  {n:"Probow Russet",sku:"SBA25PB",img:BAR+"Ball-Ardeeno-Neo_Series_25-Probow_Russet-1200x1800-Slide_01.jpg"},
+  {n:"Probow Frost",sku:"SBA25PBW",img:BAR+"Ball-Ardeeno-Neo_Series_25-Probow_Frost-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Lowbow Glacier",sku:"SBA25LB",img:BAR+"Ball-Ardeeno-Neo_Series_25-Lowbow_Glacier-1200x1800-Slide_01-optimized.jpg"}]},
+
+{id:"ar10",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Neo 10",comp:"10% Carbon",talles:T4,may:99500,pvp:208950,
+ filas:[
+  {n:"Midbow Berry",sku:"SBA10MB",img:BAR+"Ball-Ardeeno-Neo_Series_10-Midbow_Berry-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Lowbow Beryl",sku:"SBA10LB",img:BAR+"Ball-Ardeeno-Neo_Series_10-Lowbow_Beryl-1200x1800-Slide_01-optimized.jpg"}]},
+
+/* ══════════ PALOS · CLASSICS ══════════ */
+{id:"cl90",ent:"Disponible",cat:"palos",col:"Classics",nombre:"Classics 90",comp:"90% Carbon, 5% Fiberglass, 5% Kevlar",talles:T2,may:245000,pvp:514500,
+ filas:[
+  {n:"Lowbow",sku:"SBC90LB",img:BAR+"download.jpg"},
+  {n:"Probow",sku:"SBC90PB",img:BAR+"download_0703f81b-9a15-4a54-8a09-c4b3b3e41304.jpg"},
+  {n:"Ultralow",sku:"SBC90UL",img:B+"files/download_7d3bef6f-4181-4e41-adce-ebdc626dc7cd.jpg"}]},
+
+{id:"cl70",ent:"Disponible",cat:"palos",col:"Classics",nombre:"Classics 70",comp:"70% Carbon, 25% Fiberglass, 5% Kevlar",talles:T2,may:205000,pvp:430500,
+ filas:[
+  {n:"Lowbow",sku:"SBC70LB",img:B+"files/download_00bc34bc-aace-4ff1-8d46-58d30f373b57.jpg"},
+  {n:"Probow",sku:"SBC70PB",img:B+"files/download_4a144aa7-562b-4a1f-85cf-2701eb007251.jpg"},
+  {n:"Ultralow",sku:"SBC70UL",img:B+"files/download_0492118c-ffae-4524-a826-89dc06392a37.jpg"}]},
+
+{id:"cl30",ent:"Disponible",cat:"palos",col:"Classics",nombre:"Classics 30",comp:"30% Carbon, 65% Fiberglass, 5% Kevlar",talles:T4,may:149000,pvp:312900,
+ filas:[
+  {n:"Lowbow",sku:"SBC30LB",img:BAR+"download_c3ce78c8-5b22-43ec-af1a-048d78487f3b.jpg"},
+  {n:"Probow",sku:"SBC30PB",img:B+"files/download_ded83c33-61c9-44dc-a174-c19a967a5ae9.jpg"}]},
+
+{id:"cl05",ent:"Disponible",cat:"palos",col:"Classics",nombre:"Classics 5",comp:"5% Carbon, 90% Fiberglass, 5% Kevlar",talles:T4,may:91500,pvp:192150,
+ filas:[
+  {n:"Midbow",sku:"SBC05MB",img:B+"files/download_a4f473d3-e2d8-4b30-ae7c-4ab545d61403.jpg"},
+  {n:"Lowbow",sku:"SBC05LB",img:B+"files/download_3703f652-d506-4973-bffb-85ad87ec952a.jpg"}]},
+
+/* ══════════ PALOS · NEO WOOD STANDARD (madera) ══════════ */
+{id:"nw",ent:"Inmediato",cat:"palos",col:"Neo Wood Standard",nombre:"Neo Wood Standard",comp:"Multi-layered laminated wood",talles:TW,may:36200,pvp:72400,
+ filas:[
+  {n:"Meadow",sku:"SBAWMB",img:BAR+"Ball-Ardeeno-Neo_Series_Wood-Standard_Meadow-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Aether",sku:"SBAWMB2",img:BAR+"Ball-Ardeeno-Neo_Series_Wood-Standard_Aether-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Viridian",sku:"SBAWMB3",img:BAR+"Ball-Ardeeno-Neo_Series_Wood-Standard_Viridian-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Sylvan",sku:"SBAWMB5",img:BAR+"Ball-Ardeeno-Neo_Series_Wood-Standard_Sylvan-1200x1800-Slide_01-optimized.jpg"}]},
+
+{id:"iwp",ent:"Inmediato",cat:"palos",col:"Neo Wood Standard",nombre:"Indoor Pro Wood",comp:"Laminated wood · Indoor",talles:['37.5"'],may:72450,pvp:144900,
+ filas:[
+  {n:"Indoor Pro",sku:"SBIWPB",img:BAR+"Ball-Ardeeno-Neo_Series_Wood-Standard_Aether-1200x1800-Slide_01-optimized.jpg"}]},
+
+/* ══════════ BOLSOS ══════════ */
+{id:"bgL",ent:"Inmediato",cat:"bolsos",col:"Stickbags",nombre:"Stickbag Large",comp:"Funda grande",talles:TU,may:172000,pvp:344000,
+ filas:[
+  {n:"Taupe",sku:"LST250",img:B+"files/ball-alter-2-large-stickbag-taupe-1.jpg"},
+  {n:"Teal",sku:"LSE250",img:B+"files/ball-alter-2-large-stickbag-teal-1.jpg"},
+  {n:"Mauve",sku:"LSM250",img:B+"files/ball-alter-2-large-stickbag-mauve-1.jpg"},
+  {n:"Black",sku:"BHSBLK",img:BAR+"Ball_Web-Bags-Large-45.jpg"}]},
+
+{id:"bgM",ent:"Inmediato",cat:"bolsos",col:"Stickbags",nombre:"Stickbag Medium",comp:"Funda mediana",talles:TU,may:138700,pvp:277400,
+ filas:[
+  {n:"Taupe",sku:"MST250",img:B+"files/ball-alter-2-medium-stickbag-taupe-1.jpg"},
+  {n:"Teal",sku:"MSE250",img:B+"files/ball-alter-2-medium-stickbag-teal-1.jpg"},
+  {n:"Mauve",sku:"MSM250",img:B+"files/ball-alter-2-medium-stickbag-mauve-1.jpg"},
+  {n:"Black",sku:"BHSBMK",img:BAR+"Ball-Web-Bags-Medium-45.jpg"}]},
+
+{id:"bgS",ent:"Inmediato",cat:"bolsos",col:"Stickbags",nombre:"Stickbag Small",comp:"Funda simple",talles:TU,may:112000,pvp:224000,
+ filas:[
+  {n:"Taupe",sku:"SST250",img:B+"files/ball-alter-2-small-stickbag-taupe-1.jpg"},
+  {n:"Teal",sku:"SSE250",img:B+"files/ball-alter-2-small-stickbag-teal-1.jpg"},
+  {n:"Mauve",sku:"SSM250",img:B+"files/ball-alter-2-small-stickbag-mauve-1.jpg"}]},
+
+{id:"bgOne",ent:"Inmediato",cat:"bolsos",col:"Stickbags",nombre:"One Stick Bag",comp:"Funda individual",talles:TU,may:22500,pvp:45000,
+ filas:[
+  {n:"Black",sku:"OSB-BLK",img:B+"files/ball-alter-2-small-stickbag-taupe-1.jpg"}]},
+
+{id:"bkp",ent:"Inmediato",cat:"bolsos",col:"Backpacks",nombre:"Backpack",comp:"Mochila",talles:TU,may:100800,pvp:201600,
+ filas:[
+  {n:"Taupe",sku:"BPT250",img:B+"files/ball-alter-2-backpack-taupe-1.jpg"},
+  {n:"Teal",sku:"BPE250",img:B+"files/ball-alter-2-backpack-teal-1.jpg"},
+  {n:"Mauve",sku:"BPM250",img:B+"files/ball-alter-2-backpack-mauve-1.jpg"},
+  {n:"Peacock",sku:"BHBPCP",img:BAR+"ball-alter1-backpack-peacock-slide01_1200x1800_0b29e704-015d-4cb8-97e9-4cd22bed0885.png"},
+  {n:"Black",sku:"BHBPCK",img:BAR+"Ball-Web-Backpack-45.jpg"}]},
+
+{id:"bkpB",ent:"Inmediato",cat:"bolsos",col:"Backpacks",nombre:"Backpack Brown",comp:"Mochila",talles:TU,may:99500,pvp:199000,
+ filas:[
+  {n:"Brown",sku:"BHBPCR",img:B+"files/ball-alter-2-backpack-carob-1.jpg"}]},
+
+/* ══════════ ACCESORIOS ══════════ */
+{id:"gl_s",ent:"Inmediato",cat:"accesorios",col:"Protección",nombre:"Venture Glove V2 Short",comp:"Guante corto",talles:TG,may:34500,pvp:69000,
+ filas:[
+  {n:"Black",sku:"VGV2SBK",img:B+"files/Ball-ShortGlove-Black-Front-1200x1800_221da026-2791-42ef-8727-7b6994a8a278.jpg"},
+  {n:"White",sku:"VGV2SW",img:BAR+"Ball-ShortGlove-White-Front-1200x1800_4f6532c0-3ef9-4eb0-9ebb-0c418e6448d4.jpg"},
+  {n:"Blue",sku:"VGV2SBL",img:B+"files/Ball-ShortGlove-Blue-Front-1200x1800_b4443939-1eca-4dc3-ab93-8a752ab813c2.jpg"},
+  {n:"Green",sku:"VGV2SG",img:BAR+"Ball-ShortGlove-Green-Front-1200x1800_820761c5-77c0-4229-8218-fda42395248b.jpg"}]},
+
+{id:"gl_l",ent:"Inmediato",cat:"accesorios",col:"Protección",nombre:"Venture Glove V2 Long",comp:"Guante largo",talles:TG,may:37500,pvp:75000,
+ filas:[
+  {n:"Black",sku:"VGV2LBK",img:BAR+"Ball-LongGlove-Black-Front-1200x1800_8fae5b45-cfd0-4a91-8421-763530577d5e.jpg"},
+  {n:"White",sku:"VGV2LW",img:B+"files/Ball-LongGlove-White-Front-1200x1800_24624f4d-36fc-4099-be84-0734f42e34de.jpg"},
+  {n:"Blue",sku:"VGV2LBL",img:B+"files/Ball-LongGlove-Blue-Front-1200x1800_f684acfe-986f-4e7a-a96b-417fb6a25242.jpg"},
+  {n:"Green",sku:"VGV2LG",img:B+"files/Ball-LongGlove-Green-Front-1200x1800_78ccc3a1-9237-44bb-8679-4179bb60e419.jpg"}]},
+
+{id:"shin",ent:"Inmediato",cat:"accesorios",col:"Protección",nombre:"Venture Shinguards V2",comp:"Canilleras",talles:['S','M','L'],may:34950,pvp:69900,
+ filas:[
+  {n:"Venture V2",sku:"VSGV2",img:B+"files/Ball-Shinguards-45-1200x1800.jpg"}]},
+
+{id:"pckp",ent:"Inmediato",cat:"accesorios",col:"Protección",nombre:"Penalty Corner Knee Pads",comp:"Rodilleras corner corto",talles:['S','M','L'],may:46500,pvp:93000,
+ filas:[
+  {n:"Knee Pads",sku:"PCKP",img:B+"products/Ball-PCKneepads-01_1200x1800_f6f7a168-3c17-4548-87e9-10190a913628.jpg"}]},
+
+{id:"grip1",ent:"Inmediato",cat:"accesorios",col:"Grips",nombre:"Chamois Over Grip",comp:"Cubre grip",talles:['GREEN','White','Black'],may:11500,pvp:23000,
+ filas:[
+  {n:"Chamois",sku:"ELOGB",img:B+"files/Ball-GripsNuevos-Chamois_Natural-1200x1800.jpg"}]},
+
+{id:"grip3",ent:"Inmediato",cat:"accesorios",col:"Grips",nombre:"Tripack Chamois",comp:"Pack x3",talles:['GREEN','White','Black'],may:30000,pvp:60000,
+ filas:[
+  {n:"Tripack",sku:"CHGBX3",img:B+"files/Ball-GripsNuevos-ChamoisX3_White-1200x1800.jpg"}]},
+
+{id:"gripS",ent:"Sin stock",cat:"accesorios",col:"Grips",nombre:"Soft Grip",comp:"PU perforado",talles:['White','Black'],may:11900,pvp:23800,
+ filas:[
+  {n:"Soft Grip",sku:"SOGB",img:B+"files/Ball-GripsNuevos-Soft_White-1200x1800.jpg"}]},
+
+{id:"gripF",ent:"Sin stock",cat:"accesorios",col:"Grips",nombre:"FeelGrip",comp:"Buffed perforado",talles:['White','Black'],may:13500,pvp:27000,
+ filas:[
+  {n:"FeelGrip",sku:"FEGB",img:B+"files/Ball-GripsNuevos-Feel_Negro-1200x1800.jpg"}]},
+
+{id:"calf",ent:"Disponible",cat:"accesorios",col:"Essentials",nombre:"Calf Sleeves F1",comp:"Medias de compresión",talles:['JR','SR'],may:13500,pvp:27000,
+ filas:[
+  {n:"Blue",sku:"CSF1-BL",img:B+"products/Ball-CalfSleevesBlue-Slide01_1200x1800_9a297df2-2f56-41fc-8b8e-51a4a80ce06a.jpg"},
+  {n:"Green",sku:"CSF1-GR",img:B+"products/Ball-CalfSleevesGreen-Slide01_1200x1800_7e904f1f-a9bc-430a-abac-a6e077499a90.jpg"},
+  {n:"Pink",sku:"CSF1-PK",img:B+"files/Ball-CalfSleevesPink-Slide01_1200x1800_98771f2c-2119-4441-a44c-0a422086e6e1.jpg"}]},
+
+{id:"hb",ent:"Disponible",cat:"accesorios",col:"Essentials",nombre:"Headbands Tripack",comp:"Vinchas x3",talles:TU,may:11500,pvp:23000,
+ filas:[
+  {n:"Black",sku:"BHB088",img:B+"products/BallHeadbands_NEGRO_1200x1800_bef7ad82-ae90-4053-bd95-06f614f2938a.jpg"},
+  {n:"Pink/Green/Burgundy",sku:"BHB084",img:B+"products/BallHeadbands_COLOR_1200x1800_6251f1a8-681b-486f-9a6b-c8abd6c6334c.jpg"}]},
+
+{id:"swb",ent:"Disponible",cat:"accesorios",col:"Essentials",nombre:"Sweatband Kit",comp:"Muñequeras",talles:TU,may:13900,pvp:27800,
+ filas:[
+  {n:"Brown",sku:"BSBKBR",img:BAR+"BallWebSweatbandsbeige1.jpg"},
+  {n:"Black",sku:"BSBKBK",img:BAR+"BallWebSweatbandsnegro1.jpg"},
+  {n:"White",sku:"BSBKWH",img:BAR+"BallWebSweatbandswhite1.jpg"}]},
+
+{id:"ptp",ent:"Disponible",cat:"accesorios",col:"Essentials",nombre:"Pro Touch Pods",comp:"Por par",talles:['BLANCO','NEGRO'],may:24500,pvp:49000,
+ filas:[
+  {n:"Pro Touch",sku:"PTP",img:B+"files/Ball-Web-ProTouch-Black-1200x1800-Slide_01.jpg"}]},
+
+{id:"icb",ent:"Disponible",cat:"accesorios",col:"Essentials",nombre:"Intel Coaching Board LCD",comp:"Pizarra LCD",talles:TU,may:75000,pvp:150000,
+ filas:[
+  {n:"Coaching Board",sku:"ICB-LCD",img:B+"files/ball-coachingboard-Slide02_1200x1800_1200x1800_8afa936a-8eee-4ba3-b045-d9bf19981e45.webp"}]},
+
+/* ══════════ CALZADO ══════════ */
+{id:"riser",ent:"Inmediato",cat:"calzado",col:"RISER",nombre:"RISER",comp:"Oxford water-repellent · TPU",talles:TCAL,may:98500,pvp:197000,
+ filas:[
+  {n:"Orchid",sku:"BSRIOR",img:BAR+"2024.12.11-Balling-Zapatillas_45_11.jpg"},
+  {n:"Raven",sku:"BSRIRA",img:B+"files/2024.12.11-Balling-Zapatillas_45_07_f3676fdd-24f8-4f22-b4be-7de3a1ac3e70.jpg"},
+  {n:"Carbon",sku:"BSRICA",img:B+"files/2024.12.11-Balling-Zapatillas_45_09.jpg"}]},
+
+/* ══════════ PADEL ══════════
+   Padel no figura en la lista de agosto. PVP tomado de ballinghockey.com.ar
+   y precio mayorista estimado con la misma relación que el resto de la
+   lista (PVP ≈ 2,1 × mayorista). A confirmar por el representante. */
+{id:"pd18",ent:"Disponible",cat:"padel",col:"Padel",nombre:"Mosaic Diamond 18K",comp:"Carbono 18K · Diamante",talles:TU,may:185700,pvp:390000,
+ filas:[
+  {n:"Mosaic Diamond",sku:"PAD-MOS-D18",img:BAR+"Ball-Padel-Diamond-Carbon_3_1200x1800_ccbeed73-05a0-4058-ba3d-3cf9a79beddd.jpg"}]},
+
+{id:"pdae",ent:"Disponible",cat:"padel",col:"Padel",nombre:"Aerial Teardrop",comp:"Fiberglass · Teardrop",talles:TU,may:100000,pvp:210000,
+ filas:[
+  {n:"Aerial Teardrop",sku:"PAD-AER-TD",img:B+"products/Ball-Padel-Aerial-Teardrop-Fiberglass_Front_1200x1800_f7ec38b3-dc49-4f93-92f5-47aa82971cc1.jpg"}]},
+
+{id:"pdmi",ent:"Disponible",cat:"padel",col:"Padel",nombre:"Mirage Teardrop 3K",comp:"Carbono 3K · Teardrop",talles:TU,may:131000,pvp:275000,
+ filas:[
+  {n:"Mirage Teardrop",sku:"PAD-MIR-T3K",img:B+"products/Ball-Padel-Mirage-Teardrop_Carbon_Front_1200x1800_26b2bde1-4fac-4471-a64b-d606be8f209c.jpg"}]},
+
+{id:"pdre",ent:"Disponible",cat:"padel",col:"Padel",nombre:"Reality Round",comp:"Fiberglass · Redonda",talles:TU,may:88000,pvp:185000,
+ filas:[
+  {n:"Reality Round",sku:"PAD-REA-RND",img:B+"products/Ball-Padel-Reality-Round-Fiberglass_Front_1200x1800_aad3b748-4772-484b-924e-b3a2af5e384b.jpg"}]}
+];
+
+/* ═══════════════════════════════════════════════════════════
+   CONFIG. Vacío = modo demo con el catálogo real de ballinghockey.com
+   ═══════════════════════════════════════════════════════════ */
+const SUPABASE_URL = "";
+const SUPABASE_ANON_KEY = "";
+const IVA = .21;
+/* Los precios salen de LISTA_PRECIOS_BALLING_AGOSTO.xlsx, en pesos:
+   may = PRECIO S/IVA (lo que paga el mayorista) · pvp = PRECIO PUBLICO */
+let sb=null, DEMO=true, S={};
+if(SUPABASE_URL&&SUPABASE_ANON_KEY){ sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY); DEMO=false; }
+
+const CW={Frost:'#A9C7DE',Blush:'#C9A2C0',Aqua:'#4FA89A',Inferno:'#C7462A',Sage:'#B7C2A8',Mauve:'#A98CB0',
+  Marigold:'#E0A32B',Speedwell:'#4E6FBF',Hollyhock:'#9C3F6B',Lilac:'#C3AEDE',Iris:'#5F5FC4',Ashen:'#8C8C86',
+  Tephra:'#4A403B',Mint:'#A5DFCB',Aether:'#CAC3B4',Navy:'#243863',Taupe:'#A6998B',Teal:'#2E6E70',
+  Negro:'#17171B',Negra:'#17171B',Black:'#17171B',Peacock:'#1E5F73',Carbon:'#3B3B3F',Raven:'#1B1B1F',
+  Orchid:'#B36BA0',Ember:'#D9451F',Reef:'#2C8B8B',Indigo:'#39408E',White:'#F4F4F0',Blanco:'#F4F4F0',
+  Blue:'#2B5FBF',Azul:'#2B5FBF',Green:'#2F8F5B',Verde:'#2F8F5B'};
+const col = n => { for(const k in CW) if(n.includes(k)) return CW[k]; return '#C9C9C1'; };
+
+/* specs = colección + composición, tal cual la lista de precios */
+CAT.forEach(m=>{ m.specs=[m.comp].filter(Boolean); });
+const ENT={'Inmediato':['ok','Entrega inmediata'],'Disponible':['ok','Disponible'],
+  'Sin stock':['no','Sin stock']};
+
+
+/* stock determinístico por SKU+talle */
+const hash=s=>{let h=7;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h;};
+CAT.forEach(m=>m.filas.forEach(f=>{
+  f.pvp=m.pvp; f.may=m.may; f.mod=m.id;
+  f.stock={}; m.talles.forEach(t=>{const h=hash(f.sku+t); f.stock[t]= h%13===0?0 : h%42;});
+}));
+
+const idx={}; CAT.forEach(m=>m.filas.forEach(f=>idx[f.sku]={m,f}));
+const idx0=idx;
+const CLI={id:'c1',razon:'Distribuidora Del Sur SRL',cuit:'30-71204558-9'};
+let PED=[
+ {n:1042,f:'2026-07-28',e:'enviado',t:0,u:0,fac:{nro:'A-0001-00004412',fecha:'2026-07-30',importe:0},env:{transporte:'Andreani',guia:'360000123456789',fecha:'2026-08-05'},items:{'SBA97LB|37.5"':6,'SBA97UL|36,5"':6,'SBC90LB|37.5"':4,'BSRICA|38':8,'ELOGB|Black':10}},
+ {n:1051,f:'2026-08-04',e:'aceptado',t:0,u:0,items:{'VGV2SBK|M':6,'VGV2LBL|L':5,'VSGV2|M':8}},
+ {n:1056,f:'2026-08-08',e:'pendiente',t:0,u:0,items:{'BPT250|Único':4,'LST250|Único':3}}];
+
+/* los totales de los pedidos demo salen de sus propios items */
+PED.forEach(p=>{
+  let u=0,neto=0;
+  for(const k in p.items){ const [sku,t]=k.split('|'); const r=idx0[sku];
+    if(!r) continue; u+=p.items[k]; neto+=p.items[k]*r.f.may; }
+  p.u=u; p.t=Math.round(neto*1.21);
+});
+
+let cart={};    // confirmado — "sku|talle" -> qty
+let draft={};   // tipeado en la grilla, todavía sin agregar
+const $=id=>document.getElementById(id);
+const fecha=f=>{const [y,m,d]=f.split('-');return d+'/'+m+'/'+y;};
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+const money=n=>'$'+Math.round(n).toLocaleString('es-AR');
+
+const find=k=>{const[sku,t]=k.split('|'); const r=idx[sku]; return r?{m:r.m,f:r.f,t}:null;};
+const val=k=>draft[k]!==undefined?draft[k]:(cart[k]||0);
+
+function toast(msg){
+  const d=document.createElement('div'); d.className='ts'; d.textContent=msg;
+  $('toast').appendChild(d); setTimeout(()=>d.remove(),2600);
+}
+
+
+/* ═══ galería: fotos alternativas derivadas del patrón de nombres del CDN ═══
+   Shopify nombra las tomas extra de forma regular (…-01/-02/-03,
+   …Slide_01/Slide_02, …-Front-/-45-/-Back-). Generamos candidatas y las que
+   no existen se descartan solas con onerror. */
+function galeria(u){
+  const q=u.indexOf('?'), base=q<0?u:u.slice(0,q);
+  const set=[base], add=x=>{ if(!set.includes(x)) set.push(x); };
+  let m;
+  // …-01.jpg / …-1.jpg  (solo si el numero arranca despues de - o _,
+  // asi no rompemos los hashes hexadecimales del CDN)
+  if((m=base.match(/^(.*[-_])(\d{1,2})(\.[a-z]+)$/i))){
+    const w=m[2].length, n=+m[2];
+    for(let i=n+1;i<=n+3;i++) add(m[1]+String(i).padStart(w,'0')+m[3]);
+  }
+  // …-01-1200x1800.jpg
+  if((m=base.match(/^(.*[-_])(\d{2})(-\d+x\d+.*\.[a-z]+)$/i))){
+    const n=+m[2];
+    for(let i=n+1;i<=n+3;i++) add(m[1]+String(i).padStart(2,'0')+m[3]);
+  }
+  if((m=base.match(/^(.*Slide_)(\d{2})(-optimized)?(\.[a-z]+)$/i))){
+    for(let i=2;i<=4;i++) add(m[1]+String(i).padStart(2,'0')+(m[3]||'')+m[4]);
+  }
+  if(/-Front-/i.test(base)){
+    add(base.replace(/-Front-/i,'-45-')); add(base.replace(/-Front-/i,'-Back-'));
+    add(base.replace(/-Front-/i,'-Detail-'));
+  } else if(/-45-/.test(base)){
+    add(base.replace(/-45-/,'-Front-')); add(base.replace(/-45-/,'-Back-'));
+    add(base.replace(/-45-/,'-Detail-'));
+  }
+  return set.slice(0,6);
+}
+let LB={fotos:[],i:0,tit:''};
+function abrirFoto(sku){
+  const r=idx[sku]; if(!r) return;
+  LB={fotos:galeria(r.f.img), i:0, tit:r.m.nombre+' · '+r.f.n, sku};
+  $('lb').classList.add('on'); pintarLB();
+  document.body.style.overflow='hidden';
+}
+function cerrarFoto(){ $('lb').classList.remove('on'); document.body.style.overflow=''; }
+function pasarFoto(d){ const n=LB.fotos.length; if(!n) return;
+  LB.i=(LB.i+d+n)%n; pintarLB(); }
+function verFoto(i){ LB.i=i; pintarLB(); }
+function fotoRota(el,src){            // la candidata no existe en el CDN
+  LB.fotos=LB.fotos.filter(x=>x!==src);
+  if(LB.i>=LB.fotos.length) LB.i=0;
+  pintarLB();
+}
+function pintarLB(){
+  const f=LB.fotos, r=idx[LB.sku];
+  $('lbt').textContent=LB.tit;
+  $('lbs').textContent=r? r.f.sku : '';
+  $('lbi').innerHTML=f.length?`<img src="${f[LB.i]}?width=1600" alt="${esc(LB.tit)}">`:'';
+  $('lbn').style.display=f.length>1?'flex':'none';
+  $('lbc').textContent=f.length>1?(LB.i+1)+' / '+f.length:'';
+  $('lbth').innerHTML=f.map((u,i)=>
+    `<img src="${u}?width=160" class="${i===LB.i?'on':''}" alt=""
+      onclick="verFoto(${i})" onerror="fotoRota(this,${JSON.stringify(u).replace(/"/g,'&quot;')})">`).join('');
+}
+document.addEventListener('keydown',e=>{
+  if(!$('lb').classList.contains('on')) return;
+  if(e.key==='Escape') cerrarFoto();
+  if(e.key==='ArrowRight') pasarFoto(1);
+  if(e.key==='ArrowLeft') pasarFoto(-1);
+});
+
+/* ═══════════ PROMOCIONES ═══════════
+   tipo: 'categoria' | 'coleccion' | 'modelo'
+   El % se descuenta sobre el precio mayorista. */
+let PROMOS=[
+ {id:'pr1',nombre:'Liquidación Classics',tipo:'coleccion',valor:'Classics',pct:25,hasta:'2026-09-30'},
+ {id:'pr2',nombre:'Protección Venture2',tipo:'coleccion',valor:'Venture2',pct:15,hasta:'2026-09-15'},
+ {id:'pr3',nombre:'Bloom · edición limitada',tipo:'modelo',valor:'m1',pct:10,hasta:'2026-08-31'}
+];
+const vigente=p=>!p.hasta || p.hasta>=new Date().toISOString().slice(0,10);
+function promoDe(m){
+  if(!m) return null;
+  const c=PROMOS.filter(vigente).filter(p=>
+    (p.tipo==='modelo'&&p.valor===m.id) ||
+    (p.tipo==='coleccion'&&p.valor===m.col) ||
+    (p.tipo==='categoria'&&p.valor===m.cat));
+  return c.length? c.reduce((a,b)=>b.pct>a.pct?b:a) : null;
+}
+const promoSku=sku=>{const r=idx[sku]; return r?promoDe(r.m):null;};
+/* precio mayorista final, ya con promo aplicada */
+function pmay(f){ const p=promoSku(f.sku);
+  return p? Math.round(f.may*(1-p.pct/100)/100)*100 : f.may; }
+function promoTag(p,clase){ return p?`<span class="promo ${clase||''}">−${p.pct}%</span>`:''; }
+/* promos que tocan un conjunto de modelos */
+const promosDe=ms=>[...new Set(ms.map(m=>promoDe(m)).filter(Boolean))];
+
+
+/* ═══ buscador rápido por SKU ═══ */
+let QSi=-1, QSr=[];
+function qsBuscar(){
+  const q=$('qs').value.trim().toLowerCase();
+  const box=$('qsr');
+  if(q.length<2){ box.classList.remove('on'); QSr=[]; return; }
+  const res=[];
+  for(const sku in idx){
+    const {m,f}=idx[sku];
+    const hay=sku.toLowerCase(), nom=(m.nombre+' '+f.n).toLowerCase();
+    let sc=-1;
+    if(hay.startsWith(q)) sc=0; else if(hay.includes(q)) sc=1; else if(nom.includes(q)) sc=2;
+    if(sc>=0) res.push({sc,sku,m,f});
+    if(res.length>60) break;
+  }
+  res.sort((a,b)=>a.sc-b.sc || a.sku.localeCompare(b.sku));
+  QSr=res.slice(0,8); QSi=-1;
+  box.innerHTML=QSr.length? QSr.map((r,i)=>{
+    const st=Object.values(r.f.stock).reduce((a,b)=>a+b,0), p=promoDe(r.m);
+    return `<button class="qsi" onmousedown="event.preventDefault();irASku('${r.sku}')" data-i="${i}">
+      <img src="${r.f.img}?width=80" alt="" loading="lazy">
+      <span class="qn"><b>${r.sku}</b><em>${r.m.nombre} · ${r.f.n}</em></span>
+      ${p?`<span class="promo mini">−${p.pct}%</span>`:''}
+      <span class="qst ${st===0?'no':st<20?'low':'ok'}">${st} u.</span></button>`}).join('')
+    : `<div class="qsv">Sin resultados para “${esc(q)}”</div>`;
+  box.classList.add('on');
+}
+function qsTecla(e){
+  if(!QSr.length) { if(e.key==='Escape') qsCerrar(); return; }
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault(); QSi=(QSi+(e.key==='ArrowDown'?1:-1)+QSr.length)%QSr.length;
+    [...$('qsr').querySelectorAll('.qsi')].forEach((b,i)=>b.classList.toggle('on',i===QSi));
+  } else if(e.key==='Enter'){ irASku(QSr[QSi<0?0:QSi].sku); }
+  else if(e.key==='Escape'){ qsCerrar(); }
+}
+function qsCerrar(){ $('qsr').classList.remove('on'); QSr=[]; QSi=-1; }
+function irASku(sku){
+  const r=idx[sku]; if(!r) return;
+  $('qs').value=''; qsCerrar(); $('qs').blur();
+  catAct=r.m.cat; subAct=subdivide(r.m.cat)?r.m.col:null; fStk=false;
+  tab='catalogo'; nav(); vCatalogo();
+  const md=$('md-'+r.m.id); if(md) md.classList.add('open');
+  setTimeout(()=>{
+    const fila=$('fila-'+sku);
+    if(fila){ fila.scrollIntoView({block:'center',behavior:'smooth'});
+      fila.classList.add('flash'); setTimeout(()=>fila.classList.remove('flash'),1800);
+      const inp=fila.querySelector('.stp input'); if(inp&&!inp.disabled) inp.focus();
+    } else if(md) md.scrollIntoView({block:'center',behavior:'smooth'});
+  },60);
+}
+document.addEventListener('keydown',e=>{
+  if((e.key==='/'||((e.ctrlKey||e.metaKey)&&e.key==='k')) &&
+     !/INPUT|TEXTAREA/.test(document.activeElement.tagName)){
+    e.preventDefault(); $('qs').focus();
+  }
+});
+
+
+/* ═══════════════════ SINCRONIZACIÓN ═══════════════════
+   Sin base configurada la app guarda en este navegador (localStorage).
+   Con Supabase conectado, el estado viaja entre computadoras: se guarda
+   una única fila JSON con pedidos, promos, stock y productos manuales. */
+const LS='balling-b2b';
+let CFG=null, SB=null, SYNC={estado:'local', ts:null, cola:null};
+try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
+
+function iniciarSB(){
+  if(!CFG||!CFG.url||!CFG.key){ SB=null; SYNC.estado='local'; return false; }
+  try{ SB=supabase.createClient(CFG.url,CFG.key); SYNC.estado='conectado'; return true; }
+  catch(e){ SB=null; SYNC.estado='error'; return false; }
+}
+iniciarSB();
+
+/* ── qué se persiste ── */
+function snapshot(){
+  const stock={}, extra=[];
+  CAT.forEach(m=>{
+    if(m.nuevo) extra.push({id:m.id,ent:m.ent,cat:m.cat,col:m.col,nombre:m.nombre,comp:m.comp,
+      talles:m.talles,may:m.may,pvp:m.pvp,nuevo:true,
+      filas:m.filas.map(f=>({n:f.n,sku:f.sku,img:f.img}))});
+    m.filas.forEach(f=>m.talles.forEach(t=>{ stock[f.sku+'|'+t]=f.stock[t]; }));
+  });
+  return {v:1, ts:new Date().toISOString(), pedidos:PED, promos:PROMOS, stock, extra};
+}
+function aplicar(d){
+  if(!d) return;
+  if(Array.isArray(d.extra)) d.extra.forEach(m=>{
+    if(CAT.some(x=>x.id===m.id)) return;
+    m.specs=[m.comp].filter(Boolean);
+    m.filas.forEach(f=>{ f.may=m.may; f.pvp=m.pvp; f.mod=m.id; f.stock={};
+      m.talles.forEach(t=>f.stock[t]=0); });
+    CAT.push(m); m.filas.forEach(f=>idx[f.sku]={m,f});
+  });
+  if(d.stock) for(const k in d.stock){ const [sku,t]=k.split('|'); const r=idx[sku];
+    if(r && r.f.stock[t]!==undefined) r.f.stock[t]=d.stock[k]; }
+  if(Array.isArray(d.pedidos)) PED=d.pedidos;
+  if(Array.isArray(d.promos)) PROMOS=d.promos;
+  SYNC.ts=d.ts||null;
+}
+
+/* ── guardar (con espera para no golpear la base en cada tecla) ── */
+function guardar(){
+  clearTimeout(SYNC.cola);
+  SYNC.cola=setTimeout(guardarYa,700);
+  pintarSync('guardando');
+}
+async function guardarYa(){
+  const d=snapshot();
+  try{ localStorage.setItem(LS+'-data',JSON.stringify(d)); }catch(e){}
+  if(!SB){ SYNC.ts=d.ts; pintarSync('local'); return; }
+  try{
+    const {error}=await SB.from('estado').upsert({id:'balling',data:d,actualizado:d.ts});
+    if(error) throw error;
+    SYNC.ts=d.ts; pintarSync('ok');
+  }catch(e){ pintarSync('error'); }
+}
+async function cargar(){
+  let local=null;
+  try{ local=JSON.parse(localStorage.getItem(LS+'-data')||'null'); }catch(e){}
+  if(!SB){ aplicar(local); pintarSync('local'); return; }
+  pintarSync('cargando');
+  try{
+    const {data,error}=await SB.from('estado').select('data').eq('id','balling').maybeSingle();
+    if(error) throw error;
+    const remoto=data&&data.data;
+    /* gana el más reciente entre lo de la nube y lo de esta máquina */
+    if(remoto && (!local || (remoto.ts||'')>=(local.ts||''))) aplicar(remoto);
+    else if(local){ aplicar(local); guardarYa(); }
+    pintarSync('ok');
+  }catch(e){ aplicar(local); pintarSync('error'); }
+}
+
+function pintarSync(e){
+  const el=$('sync'); if(!el) return;
+  const M={guardando:['·','Guardando…'],ok:['●','Sincronizado'],local:['○','Solo en esta PC'],
+    cargando:['·','Cargando…'],error:['!','Sin conexión']};
+  const [i,t]=M[e]||M.local;
+  el.className='sync '+e;
+  el.innerHTML=`<i>${i}</i>${t}${SYNC.ts&&(e==='ok'||e==='local')?`<em>${hora(SYNC.ts)}</em>`:''}`;
+  el.title = SB ? 'Base conectada · los cambios se ven en cualquier computadora'
+                : 'Sin base configurada · los cambios quedan en este navegador';
+}
+const hora=t=>{try{const d=new Date(t);
+  return d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});}catch(e){return ''}};
+
+/* ── configuración de la base, sin tocar el código ── */
+function abrirCfg(){
+  $('cgu').value=(CFG&&CFG.url)||''; $('cgk').value=(CFG&&CFG.key)||'';
+  $('cg').classList.add('on'); setTimeout(()=>$('cgu').focus(),50);
+}
+function cerrarCfg(){ $('cg').classList.remove('on'); }
+async function guardarCfg(){
+  const url=$('cgu').value.trim().replace(/\/$/,''), key=$('cgk').value.trim();
+  if(!url||!key){ toast('Completá la URL y la anon key'); return; }
+  CFG={url,key}; localStorage.setItem(LS+'-cfg',JSON.stringify(CFG));
+  if(!iniciarSB()){ toast('No se pudo iniciar la conexión'); return; }
+  cerrarCfg(); toast('Base conectada · sincronizando');
+  await cargar(); await guardarYa(); ir(tab);
+}
+function desconectarCfg(){
+  CFG=null; SB=null; localStorage.removeItem(LS+'-cfg');
+  SYNC.estado='local'; cerrarCfg(); pintarSync('local');
+  toast('Desconectado · los cambios quedan en esta PC');
+}
+
+/* ═══ acceso ═══ */
+async function entrar(){
+  const e=$('em').value.trim(), p=$('pw').value;
+  if(DEMO){
+    if(e==='admin'&&p==='admin'){S={rol:'admin',n:'Representante LatAm',s:'Panel interno'};return abrir();}
+    if(e==='demo'&&p==='demo'){S={rol:'may',n:CLI.razon,s:'CUIT '+CLI.cuit};return abrir();}
+    $('lerr').textContent='Usuario o contraseña incorrectos. Probá demo / demo.';return;
+  }
+  const {data,error}=await sb.auth.signInWithPassword({email:e,password:p});
+  if(error){$('lerr').textContent='No pudimos entrar: revisá el email y la contraseña.';return;}
+  const {data:pf}=await sb.from('perfiles').select('rol').eq('id',data.user.id).single();
+  S={rol:pf?.rol==='admin'?'admin':'may',n:data.user.email,s:''};
+  abrir();
+}
+async function abrir(){
+  $('login').style.display='none'; $('app').classList.add('on');
+  $('who').textContent=S.n; $('sub').textContent=S.s;
+  $('qsw').style.display=S.rol==='may'?'block':'none';
+  $('syncw').style.display=S.rol==='admin'?'flex':'none';
+  nav(); ir(S.rol==='admin'?'entrantes':'catalogo');
+  await cargar(); ir(tab);
+}
+/* ── Vista del comprador: SOLO Catálogo, Mi pedido, Historial ── */
+const TABS={may:[['catalogo','Catálogo'],['pedido','Mi pedido'],['historial','Historial']],
+            admin:[['entrantes','Pedidos'],['stock','Stock'],['promos','Promociones'],['cuentas','Cuentas']]};
+let tab='catalogo';
+function nav(){
+  const nu=Object.keys(cart).length;
+  $('nav').innerHTML=TABS[S.rol].map(([k,l])=>
+  `<button class="${k===tab?'on':''}" onclick="ir('${k}')">${l}${
+    k==='pedido'&&nu?`<span class="n">${nu}</span>`:
+    k==='entrantes'?`<span class="n">${PED.filter(p=>p.e==='pendiente').length}</span>`:''}</button>`).join('');
+}
+function ir(k){ tab=k; nav(); V[k](); ticker(); window.scrollTo(0,0); }
+
+/* Las fotos del CDN vienen en dos formatos: verticales 1200x1800 (palos,
+   bolsos, guantes, palas) y algunas apaisadas (calzado). Ajustamos el
+   encuadre según cada una: las verticales llenan la ficha sin recorte
+   —la proporción coincide— y las apaisadas se muestran enteras. */
+function encuadre(el){
+  const r=el.naturalWidth/el.naturalHeight;
+  el.style.objectFit = r<0.85 ? 'cover' : 'contain';
+  el.classList.add('ok');
+}
+/* ═══ catálogo: portada de categorías ═══ */
+let catAct=null, subAct=null, fCol='', fStk=false, fEnt='';
+
+/* Notas por colección (las que el representante quiere destacar) */
+const NOTA={'Bloom':'Edición limitada','Neo Wood':'Madera','Veaston':'Nueva colección',
+  "Dynamo 24'":'Junior','Classics':'Línea clásica'};
+/* Una categoría se subdivide cuando tiene 3 o más colecciones */
+const colsDe=c=>[...new Set(deCat(c).map(m=>m.col))];
+const subdivide=c=>colsDe(c).length>=3;
+const deSub=(c,sc)=>deCat(c).filter(m=>m.col===sc);
+const enCart=m=>m.filas.reduce((a,f)=>a+m.talles.reduce((b,t)=>b+(cart[f.sku+'|'+t]||0),0),0);
+const enGrilla=m=>m.filas.reduce((a,f)=>a+m.talles.reduce((b,t)=>b+val(f.sku+'|'+t),0),0);
+const netoGrilla=m=>m.filas.reduce((a,f)=>a+m.talles.reduce((b,t)=>b+val(f.sku+'|'+t)*pmay(f),0),0);
+const deCat=c=>CAT.filter(m=>m.cat===c);
+
+function vCatalogo(){
+  if(catAct && subdivide(catAct) && !subAct) return vSubcategorias();
+  if(catAct) return vCategoria();
+  $('view').innerHTML=`
+  <div class="title">
+    <div><div class="eb">Temporada 2026 · Lista mayorista vigente</div><h1 class="wide">Catálogo</h1></div>
+    <div class="sub">Elegí una categoría para ver los modelos y cargar cantidades por talle.</div>
+  </div>
+  <div class="cats">${CATS.map(c=>{
+    const ms=deCat(c.id);
+    const q=ms.reduce((a,m)=>a+enCart(m),0);
+    const pr=promosDe(ms);
+    const mx=pr.length?Math.max(...pr.map(p=>p.pct)):0;
+    return `<button class="cat" onclick="abrirCat('${c.id}')">
+      ${mx?`<span class="cq promo">−${mx}%</span>`:q?`<span class="cq">${q} u.</span>`:''}
+      <span class="fig"><img src="${c.img}?width=800" alt="${c.nombre}" loading="lazy" onload="encuadre(this)"></span>
+      <span class="ov"><span class="cn">${c.nombre}</span></span>
+    </button>`}).join('')}</div>`;
+}
+function abrirCat(c){ catAct=c; subAct=null; fCol=''; fStk=false; ir('catalogo'); }
+function abrirSub(sc){ subAct=sc; fCol=''; fStk=false; ir('catalogo'); }
+function volverCats(){ catAct=null; subAct=null; ir('catalogo'); }
+function volverSubs(){ subAct=null; ir('catalogo'); }
+
+function vSubcategorias(){
+  const c=CATS.find(x=>x.id===catAct);
+  const subs=colsDe(catAct).map(sc=>({sc,ms:deSub(catAct,sc)}))
+    .sort((a,b)=>b.ms.length-a.ms.length);
+  const skus=0;
+  $('view').innerHTML=`
+  <button class="back" onclick="volverCats()">← Todas las categorías</button>
+  <div class="title">
+    <div><div class="eb">Catálogo · ${c.desc}</div><h1 class="wide">${c.nombre}</h1></div>
+    <div class="sub">Elegí una colección para ver sus modelos, curvas y talles.</div>
+  </div>
+  <div class="cats subs">${subs.map(({sc,ms})=>{
+    const skus=ms.reduce((a,m)=>a+m.filas.length*m.talles.length,0);
+    const q=ms.reduce((a,m)=>a+enCart(m),0);
+    const pr=promosDe(ms);
+    const mx=pr.length?Math.max(...pr.map(p=>p.pct)):0;
+    return `<button class="cat" onclick="abrirSub(${JSON.stringify(sc).replace(/"/g,'&quot;')})">
+      ${mx?`<span class="cq promo">−${mx}%</span>`:q?`<span class="cq">${q} u.</span>`:''}
+      <span class="fig"><img src="${ms[0].filas[0].img}?width=640" alt="${esc(sc)}" loading="lazy" onload="encuadre(this)"></span>
+      <span class="ov"><span class="cn">${sc}</span>${NOTA[sc]?`<span class="cnota">${NOTA[sc]}</span>`:''}</span>
+    </button>`}).join('')}</div>`;
+}
+
+function vCategoria(){
+  const c=CATS.find(x=>x.id===catAct);
+  const haySub=subdivide(catAct);
+  const ms=haySub?deSub(catAct,subAct):deCat(catAct);
+  const titulo=haySub?subAct:c.nombre;
+  $('view').innerHTML=`
+  <button class="back" onclick="${haySub?'volverSubs()':'volverCats()'}">← ${haySub?c.nombre:'Todas las categorías'}</button>
+  <div class="title">
+    <div><div class="eb">${c.nombre}${NOTA[titulo]?' · '+NOTA[titulo]:' · '+c.desc}</div><h1 class="wide">${titulo}</h1></div>
+    <div class="sub">Precios mayoristas sin IVA, por unidad. El PVP sugerido va debajo.</div>
+  </div>
+  <div class="bar">
+    <input id="q" placeholder="Buscar modelo, colorway o SKU" oninput="pintar()">
+    <select onchange="fEnt=this.value;pintar()">
+      <option value="">Toda la entrega</option>
+      <option value="Inmediato" ${fEnt==='Inmediato'?'selected':''}>Entrega inmediata</option>
+      <option value="Disponible" ${fEnt==='Disponible'?'selected':''}>Disponible</option>
+    </select>
+    <button class="chip ${fStk?'on':''}" onclick="fStk=!fStk;pintar()">Solo con stock</button>
+    <span class="count" id="cnt"></span>
+  </div>
+  <div id="lista"></div>`;
+  pintar();
+}
+function pintar(){
+  const q=($('q')?.value||'').toLowerCase().trim();
+  const base=(subdivide(catAct)&&subAct)?deSub(catAct,subAct):deCat(catAct);
+  const l=base.filter(m=>{
+    if(fEnt&&m.ent!==fEnt) return false;
+    if(fStk&&!m.filas.some(f=>Object.values(f.stock).some(s=>s>0))) return false;
+    if(!q) return true;
+    return (m.nombre+' '+m.col+' '+m.filas.map(f=>f.n+' '+f.sku).join(' ')).toLowerCase().includes(q);
+  });
+  const cn=$('cnt'); if(cn) cn.textContent=l.length+(l.length===1?' modelo':' modelos');
+  $('lista').innerHTML = l.length? l.map(card).join('') :
+    `<div class="empty"><div class="t">Sin resultados</div><div class="d">Probá con otro modelo, colorway o SKU.</div>
+     <button onclick="fStk=false;fEnt='';ir('catalogo')">Limpiar filtros</button></div>`;
+}
+function card(m){
+  const q=enCart(m), pr=promoDe(m);
+  const stk=m.filas.reduce((a,f)=>a+Object.values(f.stock).reduce((b,s)=>b+s,0),0);
+  return `<div class="mod ${q?'open':''}" id="md-${m.id}">
+    <div class="mh" onclick="ab('${m.id}')">
+      <button class="zoom ph" onclick="event.stopPropagation();abrirFoto('${m.filas[0].sku}')" title="Ampliar foto">
+        <img src="${m.filas[0].img}?width=220" alt="${esc(m.nombre)}" loading="lazy"><span class="lupa">⤢</span></button>
+      <div>
+        <div class="mn">${m.nombre}</div>
+        <div class="specs">
+          <span class="sp k">${m.col}</span>${m.specs.map(s=>`<span class="sp">${s}</span>`).join('')}
+          <span class="sp">${m.filas.length} colorway${m.filas.length>1?'s':''} · ${m.talles.length} talle${m.talles.length>1?'s':''}</span>
+          <span class="sp ${ENT[m.ent][0]==='no'?'e':'t'}">${ENT[m.ent][1]}</span>
+          ${stk===0?'<span class="sp e">Sin stock</span>':stk<25?'<span class="sp e">Stock bajo</span>':''}
+          ${pr?`<span class="promo sp-pr">−${pr.pct}%</span>`:''}
+          ${q?`<span class="sp t">${q} u. en el pedido</span>`:''}
+        </div>
+      </div>
+      <div class="mp">
+        <div class="may ${pr?'pr':''}">${money(pmay(m.filas[0]))}</div>
+        <div class="pvp">PVP sugerido ${money(m.filas[0].pvp)}</div></div>
+      <div class="ar">▶</div>
+    </div>
+    <div class="mx">${pr?`<div class="promoline"><span class="promo mini">−${pr.pct}%</span>
+        <b>${pr.nombre}</b>${pr.hasta?`<span class="hasta">vigente hasta el ${fecha(pr.hasta)}</span>`:''}</div>`:''}
+      <div class="mxs">${matriz(m)}</div>${accion(m)}</div>
+  </div>`;
+}
+function matriz(m){
+  const tot=t=>m.filas.reduce((a,f)=>a+val(f.sku+'|'+t),0);
+  const totM=t=>m.filas.reduce((a,f)=>a+val(f.sku+'|'+t)*pmay(f),0);
+  return `<table class="mtx">
+  <thead><tr>
+    <th class="l stick">Colorway / SKU</th>
+    <th class="n" style="width:118px">Mayorista</th>
+    ${m.talles.map(t=>`<th>${t}</th>`).join('')}
+    <th style="width:64px">Unid.</th><th class="n" style="width:112px">Subtotal</th>
+    <th style="width:88px" class="noprint">Curva</th></tr></thead>
+  <tbody>${m.filas.map(f=>{
+    const rt=m.talles.reduce((a,t)=>a+val(f.sku+'|'+t),0);
+    const rm=m.talles.reduce((a,t)=>a+val(f.sku+'|'+t)*pmay(f),0);
+    const pr=promoSku(f.sku);
+    return `<tr id="fila-${f.sku}">
+      <td class="l stick"><div class="cw">
+        <button class="zoom" onclick="event.stopPropagation();abrirFoto('${f.sku}')" title="Ampliar foto">
+          <img src="${f.img}?width=160" alt="${esc(f.n)}" loading="lazy"><span class="lupa">⤢</span></button>
+        <div><div class="rn">${f.n}</div><div class="rs">${f.sku}</div></div></div></td>
+      <td class="pr"><span class="${pr?'pr-of':''}">${money(pmay(f))}</span>
+        <small>PVP ${money(f.pvp)}</small></td>
+      ${m.talles.map(t=>{const k=f.sku+'|'+t,st=f.stock[t],v=val(k);
+        const cl=st===0?'no':st<10?'low':'ok';
+        return `<td class="cel ${cl}">
+          <span class="stk ${cl}" title="${st} unidades disponibles">
+            <i></i>${st===0?'—':st}</span>
+          <div class="stp ${v?'has':''}" id="sp-${esc(k)}">
+            <button onclick="event.stopPropagation();paso('${esc(k)}',-1)" ${(!st||v<=0)?'disabled':''} aria-label="Restar">−</button>
+            <input type="number" min="0" max="${st}" value="${v||''}" placeholder="0" ${st?'':'disabled'}
+              onclick="event.stopPropagation()" oninput="setq('${esc(k)}',this)"
+              onkeydown="navGrilla(event,'${esc(k)}')">
+            <button onclick="event.stopPropagation();paso('${esc(k)}',1)" ${(!st||v>=st)?'disabled':''} aria-label="Sumar">+</button>
+          </div>
+        </td>`}).join('')}
+      <td class="tt" id="rt-${f.sku}">${rt||''}</td>
+      <td class="n rmoney" id="rm-${f.sku}">${rm?money(rm):''}</td>
+      <td class="noprint curva">
+        <button title="Cargar 1 por talle" onclick="event.stopPropagation();curva('${f.sku}','${m.id}',1)">+1</button>
+        <button title="Cargar 2 por talle" onclick="event.stopPropagation();curva('${f.sku}','${m.id}',2)">+2</button>
+        <button title="Vaciar la fila" onclick="event.stopPropagation();curva('${f.sku}','${m.id}',0)">✕</button>
+      </td></tr>`}).join('')}
+  </tbody>
+  <tfoot><tr><td class="l stick" colspan="2">Unidades por talle</td>
+    ${m.talles.map(t=>`<td id="ct-${m.id}-${t.replace(/\W/g,'')}">${tot(t)||''}</td>`).join('')}
+    <td id="mt-${m.id}">${enGrilla(m)||''}</td>
+    <td class="n" id="mm-${m.id}">${netoGrilla(m)?money(netoGrilla(m)):''}</td>
+    <td class="noprint"></td></tr></tfoot></table>`;
+}
+
+/* cargar una curva completa: n unidades en cada talle con stock */
+function curva(sku,mid,n){
+  const m=CAT.find(x=>x.id===mid), f=idx[sku].f;
+  m.talles.forEach(t=>{
+    const k=sku+'|'+t, st=f.stock[t];
+    draft[k]= n===0?0:Math.min(n,st);
+    const box=$('sp-'+k); if(box){const i=box.querySelector('input'); i.value=draft[k]||'';}
+  });
+  m.talles.forEach(t=>refrescar(sku+'|'+t));
+}
+/* moverse por la grilla con las flechas */
+function navGrilla(e,k){
+  if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Enter'].includes(e.key)) return;
+  const inputs=[...document.querySelectorAll('.mtx .stp input')];
+  const cur=inputs.indexOf(e.target); if(cur<0) return;
+  const fila=e.target.closest('tr'), cols=fila.querySelectorAll('.stp input').length;
+  let n=-1;
+  if(e.key==='ArrowRight') n=cur+1;
+  else if(e.key==='ArrowLeft') n=cur-1;
+  else if(e.key==='ArrowDown'||e.key==='Enter') n=cur+cols;
+  else if(e.key==='ArrowUp') n=cur-cols;
+  if(n>=0&&n<inputs.length){ e.preventDefault(); inputs[n].focus(); inputs[n].select(); }
+}
+
+function accion(m){
+  const u=enGrilla(m), ya=enCart(m);
+  return `<div class="mact" id="ac-${m.id}">
+    <div class="ms" id="ms-${m.id}"><b>${u}</b> unidades · <b>${money(netoGrilla(m))}</b> neto${ya?` · ${ya} ya en el pedido`:''}</div>
+    <div class="sp2">
+      ${ya?`<button class="und" onclick="quitarMod('${m.id}')">Quitar del pedido</button>`:''}
+      <button class="add" id="ad-${m.id}" onclick="commit('${m.id}')" ${u?'':'disabled'}>${ya?'Actualizar pedido':'Agregar al pedido'}</button>
+    </div></div>`;
+}
+function ab(id){ $('md-'+id).classList.toggle('open'); }
+
+function paso(k,d){
+  const {f,t}=find(k);
+  let n=val(k)+d; if(n<0)n=0; if(n>f.stock[t])n=f.stock[t];
+  draft[k]=n;
+  const box=$('sp-'+k), inp=box.querySelector('input');
+  inp.value=n||''; refrescar(k);
+}
+function setq(k,el){
+  const {f,t}=find(k); let n=parseInt(el.value||0,10); if(isNaN(n)||n<0)n=0;
+  if(n>f.stock[t]){n=f.stock[t];el.value=n;}
+  draft[k]=n; refrescar(k);
+}
+function refrescar(k){
+  const {m,f,t}=find(k), n=val(k), s=f.stock[t];
+  const box=$('sp-'+k);
+  if(box){                              // el modelo puede estar colapsado
+    box.classList.toggle('has',!!n);
+    const bs=box.querySelectorAll('button');
+    if(bs.length>=2){ bs[0].disabled = !s || n<=0; bs[1].disabled = !s || n>=s; }
+  }
+  const set=(id,v)=>{const e=$(id); if(e) e.textContent=v;};
+  set('rt-'+f.sku, m.talles.reduce((a,x)=>a+val(f.sku+'|'+x),0)||'');
+  set('ct-'+m.id+'-'+t.replace(/\W/g,''), m.filas.reduce((a,x)=>a+val(x.sku+'|'+t),0)||'');
+  set('mt-'+m.id, enGrilla(m)||'');
+  const rm=m.talles.reduce((a,x)=>a+val(f.sku+'|'+x)*pmay(f),0);
+  set('rm-'+f.sku, rm?money(rm):'');
+  set('mm-'+m.id, netoGrilla(m)?money(netoGrilla(m)):'');
+  const u=enGrilla(m), ya=enCart(m);
+  const ms=$('ms-'+m.id); if(ms) ms.innerHTML=`<b>${u}</b> unidades · <b>${money(netoGrilla(m))}</b> neto${ya?` · ${ya} ya en el pedido`:''}`;
+  const ad=$('ad-'+m.id); if(ad) ad.disabled=!u && !ya;
+}
+function commit(id){
+  const m=CAT.find(x=>x.id===id); let n=0;
+  m.filas.forEach(f=>m.talles.forEach(t=>{
+    const k=f.sku+'|'+t, v=val(k);
+    if(v>0){cart[k]=v;n+=v;} else delete cart[k];
+    delete draft[k];
+  }));
+  toast(n?`${m.nombre}: ${n} unidades en el pedido`:`${m.nombre} quitado del pedido`);
+  nav(); pintar(); ticker();
+}
+function quitarMod(id){
+  const m=CAT.find(x=>x.id===id);
+  m.filas.forEach(f=>m.talles.forEach(t=>{delete cart[f.sku+'|'+t];delete draft[f.sku+'|'+t];}));
+  toast(`${m.nombre} quitado del pedido`); nav(); pintar(); ticker();
+}
+function vaciar(){ if(!Object.keys(cart).length)return; cart={}; draft={}; toast('Pedido vaciado'); nav(); ir(tab); }
+
+function totales(){
+  let u=0,neto=0;
+  for(const k in cart){ const r=find(k); if(!r)continue; u+=cart[k]; neto+=cart[k]*pmay(r.f); }
+  neto=Math.round(neto*100)/100;
+  return {u,skus:Object.keys(cart).length,neto,total:Math.round(neto*(1+IVA)*100)/100};
+}
+function ticker(){
+  const t=totales(), el=$('tk');
+  if(!t.u||S.rol==='admin'){el.classList.remove('on');return;}
+  el.classList.add('on');
+  $('tu').textContent=t.u; $('ts').textContent=t.skus;
+  $('tn').textContent=money(t.neto); $('tt').textContent=money(t.total);
+  $('pf').style.width='100%';
+  $('tmsg').textContent='';
+}
+
+
+/* ═══ carga rápida: pegar SKU + talle + cantidad ═══
+   Formato por línea:  SKU  talle  cantidad   (separador , ; tab o espacios) */
+function abrirPad(){ $('pad').classList.add('on'); $('padt').focus(); }
+function cerrarPad(){ $('pad').classList.remove('on'); $('padr').innerHTML=''; }
+function procesarPad(){
+  const txt=$('padt').value.trim();
+  if(!txt){ toast('Pegá al menos una línea'); return; }
+  const ok=[], err=[];
+  txt.split(/\r?\n/).forEach(linea=>{
+    const L=linea.trim(); if(!L) return;
+    const p=L.split(/[,;\t]+|\s{2,}|\s+/).filter(Boolean);
+    if(p.length<2){ err.push([L,'formato incompleto']); return; }
+    const cant=parseInt(p[p.length-1],10);
+    if(isNaN(cant)||cant<1){ err.push([L,'cantidad inválida']); return; }
+    const sku=p[0].toUpperCase();
+    const r=idx[sku];
+    if(!r){ err.push([L,'SKU inexistente']); return; }
+    let talle=p.length>2 ? p.slice(1,-1).join(' ') : (r.m.talles.length===1?r.m.talles[0]:null);
+    if(!talle){ err.push([L,'falta el talle ('+r.m.talles.join(' / ')+')']); return; }
+    const real=r.m.talles.find(t=>t.replace(/[",\s]/g,'').toLowerCase()===talle.replace(/[",\s]/g,'').toLowerCase());
+    if(!real){ err.push([L,'talle inválido ('+r.m.talles.join(' / ')+')']); return; }
+    const st=r.f.stock[real];
+    if(st<=0){ err.push([L,'sin stock']); return; }
+    const q=Math.min(cant,st);
+    cart[sku+'|'+real]=q;
+    ok.push([sku,r.m.nombre+' '+r.f.n,real,q,q<cant?'ajustado a stock ('+st+')':'']);
+  });
+  $('padr').innerHTML=`
+    ${ok.length?`<div class="padok"><b>${ok.length}</b> línea${ok.length>1?'s':''} cargada${ok.length>1?'s':''}</div>
+      <table class="padt"><tbody>${ok.map(o=>`<tr><td class="m">${o[0]}</td><td>${o[1]}</td>
+        <td class="m">${o[2]}</td><td class="n"><b>${o[3]}</b></td>
+        <td class="warnx">${o[4]}</td></tr>`).join('')}</tbody></table>`:''}
+    ${err.length?`<div class="paderr"><b>${err.length}</b> no se pudo${err.length>1?'n':''} cargar</div>
+      <table class="padt"><tbody>${err.map(e=>`<tr><td colspan="2" class="m">${esc(e[0])}</td>
+        <td colspan="3" class="warnx">${e[1]}</td></tr>`).join('')}</tbody></table>`:''}`;
+  if(ok.length){ nav(); ticker(); }
+}
+function aplicarPad(){ cerrarPad(); ir('pedido'); }
+
+/* ═══ mi pedido ═══ */
+function vPedido(){
+  const t=totales();
+  if(!t.u){ $('view').innerHTML=`
+    <div class="title"><div><div class="eb">Borrador</div><h1 class="wide">Mi pedido</h1></div></div>
+    <div class="empty"><div class="t">El pedido está vacío</div>
+      <div class="d">Entrá al catálogo, elegí una categoría y cargá cantidades sobre la grilla de talles.</div>
+      <button onclick="volverCats()">Ir al catálogo</button>
+      <button class="alt" onclick="abrirPad()">Carga rápida por SKU</button>
+    </div>`; return; }
+
+  const grupos={};
+  Object.keys(cart).forEach(k=>{const r=find(k);(grupos[r.m.id]=grupos[r.m.id]||{m:r.m,ls:[]}).ls.push({k,...r});});
+  $('view').innerHTML=`
+  <div class="title"><div><div class="eb">Borrador · ${t.skus} SKUs · ${t.u} unidades</div><h1 class="wide">Mi pedido</h1></div>
+    <div class="tacc"><button class="und2" onclick="abrirPad()">Carga rápida por SKU</button>
+      <button class="und2" onclick="ir('catalogo')">Seguir cargando</button></div></div>
+  <div class="cartwrap">
+    <div class="panel" style="padding:0">
+      ${Object.values(grupos).map(g=>`<div class="grp">
+        <div class="gh"><img src="${g.m.filas[0].img}" alt=""><div class="gn">${g.m.nombre}</div>
+          <div class="gc">${g.m.col} · ${g.ls.reduce((a,l)=>a+cart[l.k],0)} u.</div></div>
+        ${g.ls.map(l=>`<div class="ln">
+          <div class="li"><button class="zoom" onclick="abrirFoto('${l.f.sku}')" title="Ampliar foto"><img src="${l.f.img}?width=120" alt="" loading="lazy"></button>
+            <div><div class="d1">${l.f.n} · ${l.t}</div>
+              <div class="d2">${l.f.sku} · ${l.f.stock[l.t]} disp.</div></div></div>
+          <div class="stp has" id="lp-${esc(l.k)}">
+            <button onclick="pasoLn('${esc(l.k)}',-1)">−</button>
+            <input type="number" min="1" max="${l.f.stock[l.t]}" value="${cart[l.k]}" oninput="setLn('${esc(l.k)}',this)">
+            <button onclick="pasoLn('${esc(l.k)}',1)" ${cart[l.k]>=l.f.stock[l.t]?'disabled':''}>+</button>
+          </div>
+          <div class="p1">${money(pmay(l.f))}</div>
+          <div class="p2">${money(cart[l.k]*pmay(l.f))}</div>
+          <button class="x" title="Quitar" onclick="quitarLn('${esc(l.k)}')">×</button>
+        </div>`).join('')}
+      </div>`).join('')}
+    </div>
+    <div class="side">
+      <div class="box">
+        <h3>Resumen</h3>
+        ${(()=>{const g={};
+          Object.keys(cart).forEach(k=>{const r=find(k);g[r.m.col]=(g[r.m.col]||0)+cart[k]*pmay(r.f);});
+          return Object.entries(g).sort((a,b)=>b[1]-a[1]).map(([c,v])=>
+            `<div class="row sub"><span>${c}</span><span>${money(v)}</span></div>`).join('');})()}
+        <div class="row"><span>Neto mayorista</span><span>${money(t.neto)}</span></div>
+        <div class="row"><span>IVA 21%</span><span>${money(Math.round(t.neto*IVA*100)/100)}</span></div>
+        <div class="row big"><span>Total c/IVA</span><span>${money(t.total)}</span></div>
+        ${(()=>{const pv=Object.keys(cart).reduce((a,k)=>{const r=find(k);return a+cart[k]*r.f.pvp;},0);
+          return `<div class="row rev"><span>Venta al público estimada</span><span>${money(pv)}</span></div>`;})()}
+        <div style="height:12px"></div>
+        <textarea id="notas" rows="2" placeholder="Notas para el pedido (opcional)"></textarea>
+        <button class="wfull p" onclick="pedirConfirmacion()">Enviar pedido</button>
+        <div style="height:8px"></div>
+        <button class="wfull s" onclick="vaciar()">Vaciar pedido</button>
+      </div>
+    </div>
+  </div>`;
+}
+function pasoLn(k,d){
+  const r=find(k); let n=(cart[k]||0)+d;
+  if(n<1){ quitarLn(k); return; }
+  if(n>r.f.stock[r.t]) n=r.f.stock[r.t];
+  cart[k]=n; vPedido(); ticker();
+}
+function setLn(k,el){
+  const r=find(k); let n=parseInt(el.value||0,10); if(isNaN(n)||n<1)n=1;
+  if(n>r.f.stock[r.t]){n=r.f.stock[r.t];el.value=n;}
+  cart[k]=n; vPedido(); ticker();
+}
+function quitarLn(k){ delete cart[k]; delete draft[k]; nav(); vPedido(); ticker(); }
+
+
+/* ═══ confirmación antes de enviar el pedido ═══ */
+function pedirConfirmacion(){
+  const t=totales(); if(!t.u) return;
+  const g={};
+  Object.keys(cart).forEach(k=>{const r=find(k);
+    g[r.m.col]=g[r.m.col]||{u:0,n:0}; g[r.m.col].u+=cart[k]; g[r.m.col].n+=cart[k]*pmay(r.f);});
+  $('cfb').innerHTML=`
+    <div class="cfr"><span>SKUs distintos</span><b>${t.skus}</b></div>
+    <div class="cfr"><span>Unidades totales</span><b>${t.u}</b></div>
+    <div class="cfl">${Object.entries(g).sort((a,b)=>b[1].n-a[1].n).map(([c,v])=>
+      `<div class="cfi"><span>${c}</span><span class="m">${v.u} u.</span><b>${money(v.n)}</b></div>`).join('')}</div>
+    <div class="cfr tot"><span>Total con IVA</span><b>${money(t.total)}</b></div>`;
+  $('cf').classList.add('on'); document.body.style.overflow='hidden';
+  setTimeout(()=>$('cfok').focus(),50);
+}
+function cerrarConf(){ $('cf').classList.remove('on'); document.body.style.overflow=''; }
+async function confirmarEnvio(){ cerrarConf(); await enviar(); }
+
+async function enviar(){
+  const t=totales(); if(!t.u) return;
+  const items=Object.keys(cart).map(k=>{const{m,f,t:tl}=find(k);
+    return{sku:f.sku+'-'+tl,desc:`${m.nombre} ${f.n} ${tl}`,cant:cart[k],precio:pmay(f),sub:cart[k]*pmay(f)};});
+  if(false){
+    const {data:p,error}=await sb.from('pedidos').insert({cliente_id:CLI.id,estado:'pendiente',
+      notas:$('notas')?.value||null}).select().single();
+    if(error){toast('No se pudo enviar el pedido. Reintentá en unos segundos.');return;}
+    await sb.from('pedido_items').insert(items.map(i=>({pedido_id:p.id,sku:i.sku,descripcion:i.desc,
+      cantidad:i.cant,precio_unit:i.precio,subtotal:i.sub})));
+  }
+  const num=Math.max(...PED.map(p=>p.n))+1;
+  PED.unshift({n:num,f:new Date().toISOString().slice(0,10),e:'pendiente',t:t.total,u:t.u,items:{...cart},notas:$('notas')?.value||''});
+  cart={}; draft={}; guardar(); toast('Pedido #'+num+' enviado'); nav(); ir('historial');
+}
+
+/* ═══ historial ═══ */
+const EST={
+  pendiente:['','Pendiente'], aceptado:['t','Aceptado'], rechazado:['e','Rechazado'],
+  facturado:['t','Facturado'], enviado:['t','Enviado'], terminado:['k','Terminado']};
+const PASOS=['pendiente','aceptado','facturado','enviado','terminado'];
+function vHistorial(){
+  $('view').innerHTML=`<div class="title"><div><div class="eb">Compras anteriores</div><h1 class="wide">Historial</h1></div>
+   <div class="sub">Duplicá cualquier pedido para volver a cargarlo, ajustado al stock de hoy.</div></div>
+  ${PED.length?`<div class="panel"><table><thead><tr><th>Pedido</th><th>Fecha</th><th>Estado</th><th>Avance</th>
+    <th class="n">Unidades</th><th class="n">Total c/IVA</th><th></th></tr></thead><tbody>
+    ${PED.map(p=>{const i=PASOS.indexOf(p.e);return`<tr>
+      <td class="m" style="font-weight:600">#${p.n}</td><td class="m">${p.f}</td>
+      <td><span class="badge ${EST[p.e][0]}">${EST[p.e][1]}</span></td>
+      <td><div class="track">${PASOS.map((_,k)=>`<i class="${k<i?'d':k===i?'c':''}"></i>`).join('')}</div></td>
+      <td class="n">${p.u}</td><td class="n" style="font-weight:600">${money(p.t)}</td>
+      <td><button class="lk" onclick="duplicar(${p.n})">Duplicar</button></td></tr>`}).join('')}
+    </tbody></table></div>`:
+  `<div class="empty"><div class="t">Todavía no cargaste ningún pedido</div>
+   <div class="d">Armá el primero desde el catálogo: elegí una categoría, cargá cantidades y enviálo.</div>
+   <button onclick="volverCats()">Ir al catálogo</button></div>`}`;
+}
+function duplicar(n){
+  const p=PED.find(x=>x.n===n); let ajust=0, ok=0;
+  Object.entries(p.items||{}).forEach(([k,q])=>{
+    const x=find(k); if(!x) return;
+    const s=x.f.stock[x.t]; if(s<=0){ajust++;return;}
+    if(q>s){q=s;ajust++;}
+    cart[k]=Math.min((cart[k]||0)+q, s); ok++;
+  });
+  toast(ajust?`Pedido #${n} duplicado · ${ajust} líneas ajustadas por stock`:`Pedido #${n} duplicado`);
+  nav(); ir('pedido');
+}
+
+/* ═══ panel del representante ═══ */
+
+
+/* ═══════════ CIRCUITO DEL PEDIDO (representante) ═══════════
+   pendiente → aceptado → facturado → enviado → terminado
+   El rechazo corta el circuito. Al aceptar se descuenta el stock. */
+const hoy=()=>new Date().toISOString().slice(0,10);
+function refrescarAdmin(){ if(REM) vRemito(); else vEntrantes(); }
+function descontarStock(p){
+  for(const k in p.items||{}){ const [sku,t]=k.split('|'); const r=idx[sku];
+    if(r) r.f.stock[t]=Math.max(0,r.f.stock[t]-p.items[k]); }
+}
+function aceptarPedido(n){
+  const p=PED.find(x=>x.n===n); if(!p||p.e!=='pendiente') return;
+  p.e='aceptado'; p.aceptado=hoy(); descontarStock(p);
+  toast('Pedido #'+n+' aceptado'); guardar(); guardar(); guardar(); guardar(); guardar(); refrescarAdmin();
+}
+let RCH=null;
+function abrirRechazo(n){ RCH=n; $('rcm').value=''; $('rc').classList.add('on');
+  setTimeout(()=>$('rcm').focus(),50); }
+function cerrarRechazo(){ $('rc').classList.remove('on'); RCH=null; }
+function confirmarRechazo(){
+  const p=PED.find(x=>x.n===RCH), m=$('rcm').value.trim();
+  if(!m){ toast('Escribí el motivo del rechazo'); $('rcm').focus(); return; }
+  p.e='rechazado'; p.motivo=m; p.rechazado=hoy();
+  cerrarRechazo(); toast('Pedido #'+p.n+' rechazado'); guardar(); guardar(); guardar(); guardar(); guardar(); refrescarAdmin();
+}
+let FAC=null;
+function abrirFactura(n){
+  FAC=PED.find(x=>x.n===n); if(!FAC) return;
+  const f=FAC.fac||{};
+  $('fcn').value=f.nro||''; $('fcf').value=f.fecha||hoy(); $('fci').value=f.importe||FAC.t;
+  $('fct').textContent='Pedido #'+FAC.n+' · '+CLI.razon;
+  $('fc').classList.add('on'); setTimeout(()=>$('fcn').focus(),50);
+}
+function cerrarFactura(){ $('fc').classList.remove('on'); FAC=null; }
+function guardarFactura(){
+  const nro=$('fcn').value.trim(), imp=parseFloat($('fci').value);
+  if(!nro){ toast('Falta el número de factura'); $('fcn').focus(); return; }
+  if(!imp||imp<=0){ toast('Falta el importe'); $('fci').focus(); return; }
+  FAC.fac={nro,fecha:$('fcf').value,importe:imp};
+  if(FAC.e==='aceptado') FAC.e='facturado';
+  const n=FAC.n; cerrarFactura();
+  toast('Factura '+nro+' cargada en el pedido #'+n); guardar(); guardar(); guardar(); guardar(); guardar(); refrescarAdmin();
+}
+let DES=null;
+function abrirEnvio(n){
+  DES=PED.find(x=>x.n===n); if(!DES) return;
+  const e=DES.env||{};
+  $('evt').value=e.transporte||''; $('evg').value=e.guia||''; $('evf').value=e.fecha||hoy();
+  $('evtit').textContent='Pedido #'+DES.n+' · '+CLI.razon;
+  $('ev').classList.add('on'); setTimeout(()=>$('evt').focus(),50);
+}
+function cerrarEnvio(){ $('ev').classList.remove('on'); DES=null; }
+function guardarEnvio(){
+  const tr=$('evt').value.trim();
+  if(!tr){ toast('Poné el transporte'); $('evt').focus(); return; }
+  DES.env={transporte:tr,guia:$('evg').value.trim(),fecha:$('evf').value};
+  DES.e='enviado'; const n=DES.n; cerrarEnvio();
+  toast('Pedido #'+n+' marcado como enviado'); guardar(); guardar(); guardar(); guardar(); guardar(); refrescarAdmin();
+}
+function terminarPedido(n){
+  const p=PED.find(x=>x.n===n); p.e='terminado'; p.terminado=hoy();
+  toast('Pedido #'+n+' terminado'); guardar(); guardar(); guardar(); guardar(); guardar(); refrescarAdmin();
+}
+function accionesPedido(p,clase){
+  const b=[];
+  if(p.e==='pendiente'){
+    b.push(`<button class="${clase} ok" onclick="aceptarPedido(${p.n})">Aceptar</button>`);
+    b.push(`<button class="${clase} no" onclick="abrirRechazo(${p.n})">Rechazar</button>`);
+  } else if(p.e==='aceptado'){
+    b.push(`<button class="${clase} ok" onclick="abrirFactura(${p.n})">Cargar factura</button>`);
+  } else if(p.e==='facturado'){
+    b.push(`<button class="${clase} ok" onclick="abrirEnvio(${p.n})">Marcar enviado</button>`);
+    b.push(`<button class="${clase}" onclick="abrirFactura(${p.n})">Editar factura</button>`);
+  } else if(p.e==='enviado'){
+    b.push(`<button class="${clase} ok" onclick="terminarPedido(${p.n})">Marcar terminado</button>`);
+    b.push(`<button class="${clase}" onclick="abrirEnvio(${p.n})">Editar despacho</button>`);
+  }
+  return b.join('');
+}
+
+/* ═══════════ REMITO DEL PEDIDO (vista del representante) ═══════════
+   Lo esencial: SKU, nombre, cantidad y total por línea. */
+let REM=null;
+function verRemito(n){ REM=PED.find(p=>p.n===n); ir('remito'); }
+function volverEntrantes(){ REM=null; ir('entrantes'); }
+
+function lineasDe(p){
+  const ls=[];
+  for(const k in p.items||{}){
+    const [sku,t]=k.split('|'); const r=idx[sku]; const c=p.items[k];
+    if(r) ls.push({sku:r.f.sku,talle:t,nombre:r.m.nombre+' '+r.f.n,col:r.m.col,
+      cant:c,unit:pmay(r.f),sub:c*pmay(r.f)});
+    else ls.push({sku,talle:t,nombre:'(SKU fuera de catálogo)',col:'',cant:c,unit:0,sub:0});
+  }
+  return ls.sort((a,b)=>a.sku.localeCompare(b.sku)||a.talle.localeCompare(b.talle));
+}
+
+function vRemito(){
+  if(!REM) return vEntrantes();
+  const p=REM, ls=lineasDe(p);
+  const neto=ls.reduce((a,l)=>a+l.sub,0), iva=Math.round(neto*IVA), tot=neto+iva;
+  const un=ls.reduce((a,l)=>a+l.cant,0);
+  $('view').innerHTML=`
+  <button class="back noprint" onclick="volverEntrantes()">← Pedidos</button>
+  <div class="rem" id="remito">
+    <div class="remh">
+      <div>
+        <div class="remlogo">Balling<i>.</i></div>
+        <div class="remsub">Representación Latinoamérica · Remito de pedido</div>
+      </div>
+      <div class="remnro">
+        <div class="k">Pedido</div><div class="v">#${p.n}</div>
+        <div class="k" style="margin-top:9px">Fecha</div><div class="d">${fecha(p.f)}</div>
+      </div>
+    </div>
+    <div class="remdatos">
+      <div><span class="k">Cliente</span><b>${CLI.razon}</b></div>
+      <div><span class="k">CUIT</span><b class="m">${CLI.cuit}</b></div>
+      <div><span class="k">Estado</span><span class="badge ${EST[p.e][0]}">${EST[p.e][1]}</span></div>
+      <div><span class="k">Ítems</span><b>${ls.length} SKUs · ${un} unidades</b></div>
+    </div>
+    <table class="remt">
+      <thead><tr><th style="width:132px">SKU</th><th>Nombre</th><th style="width:76px">Talle</th>
+        <th class="n" style="width:76px">Cant.</th><th class="n" style="width:112px">Unitario</th>
+        <th class="n" style="width:124px">Total</th></tr></thead>
+      <tbody>
+        ${ls.map(l=>`<tr>
+          <td class="m sku">${l.sku}</td>
+          <td>${l.nombre}${l.col?`<span class="colx">${l.col}</span>`:''}</td>
+          <td class="m">${l.talle}</td>
+          <td class="n cant">${l.cant}</td>
+          <td class="n">${money(l.unit)}</td>
+          <td class="n tot">${money(l.sub)}</td></tr>`).join('')}
+      </tbody>
+      <tfoot>
+        <tr><td colspan="3"></td><td class="n">${un}</td><td class="n k">Neto</td><td class="n">${money(neto)}</td></tr>
+        <tr><td colspan="4"></td><td class="n k">IVA 21%</td><td class="n">${money(iva)}</td></tr>
+        <tr class="big"><td colspan="4"></td><td class="n">Total</td><td class="n">${money(tot)}</td></tr>
+      </tfoot>
+    </table>
+    ${p.fac?`<div class="remfac"><span class="k">Factura</span>
+      <b>${p.fac.nro}</b> · ${fecha(p.fac.fecha)} · ${money(p.fac.importe)}</div>`:''}
+    ${p.env?`<div class="remfac"><span class="k">Despacho</span>
+      <b>${p.env.transporte}</b>${p.env.guia?' · guía '+p.env.guia:''}${p.env.fecha?' · '+fecha(p.env.fecha):''}</div>`:''}
+    ${p.motivo?`<div class="remnota rj"><span class="k">Motivo del rechazo</span>${esc(p.motivo)}</div>`:''}
+    ${p.notas?`<div class="remnota"><span class="k">Notas del cliente</span>${esc(p.notas)}</div>`:''}
+    <div class="rempie">Precios en pesos, sin IVA en la columna unitario. Lista vigente agosto 2026.</div>
+  </div>
+  <div class="remacc noprint">
+    <button class="und2" onclick="copiarRemito(${p.n})">Copiar como texto</button>
+    <button class="und2" onclick="csvRemito(${p.n})">Descargar CSV</button>
+    <button class="und2" onclick="window.print()">Imprimir / PDF</button>
+    <span class="remsep"></span>
+    ${accionesPedido(p,'und2')}
+  </div>`;
+}
+
+function textoRemito(n){
+  const p=PED.find(x=>x.n===n), ls=lineasDe(p);
+  const neto=ls.reduce((a,l)=>a+l.sub,0), iva=Math.round(neto*IVA);
+  const w=[14,34,8,6,12];
+  const fila=a=>a.map((v,i)=>i>=3?String(v).padStart(w[i]):String(v).padEnd(w[i])).join(' ');
+  const L=['BALLING LATAM · REMITO DE PEDIDO','',
+    `Pedido #${p.n}    Fecha ${fecha(p.f)}    Estado ${EST[p.e][1]}`,
+    `Cliente: ${CLI.razon}   CUIT ${CLI.cuit}`];
+  if(p.fac) L.push(`Factura: ${p.fac.nro}  ${fecha(p.fac.fecha)}  ${money(p.fac.importe)}`);
+  L.push('', fila(['SKU','NOMBRE','TALLE','CANT','TOTAL']),
+    '-'.repeat(w.reduce((a,b)=>a+b,0)+4));
+  ls.forEach(l=>L.push(fila([l.sku,l.nombre.slice(0,34),l.talle,l.cant,money(l.sub)])));
+  L.push('-'.repeat(w.reduce((a,b)=>a+b,0)+4));
+  L.push(`${ls.length} SKUs · ${ls.reduce((a,l)=>a+l.cant,0)} unidades`);
+  L.push(`Neto ${money(neto)}   IVA ${money(iva)}   TOTAL ${money(neto+iva)}`);
+  return L.join('\n');
+}
+function copiarRemito(n){
+  const t=textoRemito(n);
+  if(navigator.clipboard) navigator.clipboard.writeText(t).then(()=>toast('Remito copiado'),()=>toast('No se pudo copiar'));
+  else toast('No se pudo copiar');
+}
+function csvRemito(n){
+  const p=PED.find(x=>x.n===n), ls=lineasDe(p);
+  const q=v=>`"${String(v).replace(/"/g,'""')}"`;
+  const rows=[['SKU','Nombre','Talle','Cantidad','Unitario','Total']].concat(
+    ls.map(l=>[l.sku,l.nombre,l.talle,l.cant,l.unit,l.sub]));
+  const csv='\ufeff'+rows.map(r=>r.map(q).join(';')).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download=`remito-${p.n}.csv`; a.click(); URL.revokeObjectURL(a.href);
+  toast('CSV descargado');
+}
+
+let fEst='';
+function vEntrantes(){
+  const cnt=e=>PED.filter(p=>p.e===e).length;
+  const l=fEst?PED.filter(p=>p.e===fEst):PED;
+  $('view').innerHTML=`
+  <div class="title"><div><div class="eb">Panel del representante</div><h1 class="wide">Pedidos</h1></div>
+    <div class="sub">Aceptá o rechazá lo que entra, cargá la factura de tu sistema y cerrá el pedido.</div></div>
+  <div class="kpis">
+    ${[['pendiente','A responder'],['aceptado','A facturar'],['facturado','A despachar'],['enviado','En tránsito']]
+      .map(([e,l2])=>`<button class="kpi kb ${fEst===e?'on':''}" onclick="fEst=fEst==='${e}'?'':'${e}';vEntrantes()">
+        <div class="k">${l2}</div><div class="v ${cnt(e)&&e==='pendiente'?'e':cnt(e)?'t':''}">${cnt(e)}</div></button>`).join('')}
+    <div class="kpi"><div class="k">Facturado del mes</div>
+      <div class="v">${money(PED.filter(p=>p.fac).reduce((a,p)=>a+p.fac.importe,0))}</div></div>
+  </div>
+  ${fEst?`<div class="filtroon">Mostrando solo <b>${EST[fEst][1]}</b>
+    <button onclick="fEst='';vEntrantes()">Ver todos</button></div>`:''}
+  ${l.length?`<div class="panel"><table><thead><tr><th>Pedido</th><th>Cliente</th><th>Fecha</th>
+    <th class="n">Unid.</th><th class="n">Total</th><th>Estado</th><th>Factura</th><th></th></tr></thead><tbody>
+    ${l.map(p=>`<tr>
+      <td><button class="lk" onclick="verRemito(${p.n})">#${p.n}</button></td>
+      <td>${CLI.razon}</td><td class="m">${fecha(p.f)}</td>
+      <td class="n">${p.u}</td><td class="n" style="font-weight:600">${money(p.t)}</td>
+      <td><span class="badge ${EST[p.e][0]}">${EST[p.e][1]}</span>
+        ${p.e==='rechazado'&&p.motivo?`<div class="mot">${esc(p.motivo)}</div>`:''}</td>
+      <td class="m">${p.fac?`<b>${p.fac.nro}</b><div class="rs">${fecha(p.fac.fecha)}</div>`:'<span style="color:var(--mute)">—</span>'}</td>
+      <td class="acc">${accionesPedido(p,'mini')}</td></tr>`).join('')}
+  </tbody></table></div>`:
+  `<div class="empty"><div class="t">No hay pedidos en ese estado</div>
+   <div class="d">Cambiá el filtro de arriba para ver el resto.</div></div>`}`;
+}
+let fStkPanel='';
+function vStock(){
+  const rows=[];
+  CAT.forEach(m=>m.filas.forEach(f=>m.talles.forEach(t=>
+    rows.push({m,f,t,s:f.stock[t]}))));
+  const q=fStkPanel.toLowerCase();
+  const l=q?rows.filter(r=>(r.f.sku+' '+r.m.nombre+' '+r.f.n).toLowerCase().includes(q)):rows;
+  const cero=rows.filter(r=>r.s===0).length, bajo=rows.filter(r=>r.s>0&&r.s<10).length;
+  $('view').innerHTML=`
+  <div class="title"><div><div class="eb">Inventario</div><h1 class="wide">Stock</h1></div>
+    <div class="tacc">
+      <button class="und2 ok" onclick="abrirAlta()">+ Nuevo producto</button>
+      <button class="und2" onclick="abrirStk()">Carga masiva</button>
+      <button class="und2" onclick="bajarStock()">Descargar planilla</button>
+    </div></div>
+  <div class="kpis">
+    <div class="kpi"><div class="k">SKUs · talle</div><div class="v">${rows.length}</div></div>
+    <div class="kpi"><div class="k">Unidades totales</div><div class="v">${rows.reduce((a,r)=>a+r.s,0).toLocaleString('es-AR')}</div></div>
+    <div class="kpi"><div class="k">Sin stock</div><div class="v ${cero?'e':''}">${cero}</div></div>
+    <div class="kpi"><div class="k">Stock bajo</div><div class="v ${bajo?'e':''}">${bajo}</div></div>
+  </div>
+  <div class="bar">
+    <input placeholder="Filtrar por SKU, modelo o colorway" value="${esc(fStkPanel)}"
+      oninput="fStkPanel=this.value;vStock()">
+    <span class="count">${l.length} de ${rows.length} líneas</span>
+  </div>
+  <div class="panel" style="max-height:62vh;overflow:auto">
+    <table><thead><tr><th>SKU</th><th>Modelo</th><th>Colorway</th><th>Talle</th>
+      <th class="n">Stock</th><th style="width:210px">Ajustar</th>
+      <th class="n">Mayorista</th></tr></thead><tbody>
+      ${(STKROWS=l.slice(0,400)).map((r,i)=>`<tr id="sr-${i}">
+        <td class="m" style="font-weight:600">${r.f.sku}${r.m.nuevo?'<span class="nvo">nuevo</span>':''}</td><td>${r.m.nombre}</td>
+        <td>${r.f.n}</td><td class="m">${r.t}</td>
+        <td class="n"><span class="stk ${r.s===0?'no':r.s<10?'low':'ok'}" id="sb-${i}"><i></i>${r.s===0?'—':r.s}</span></td>
+        <td>
+          <div class="edt">
+            <div class="stp">
+              <button onclick="ajustar(${i},-1)" ${r.s<=0?'disabled':''} aria-label="Restar una unidad">−</button>
+              <input type="number" min="0" value="${r.s}" id="si-${i}"
+                onfocus="this.select()" oninput="fijar(${i},this,undefined,true)"
+                onchange="fijar(${i},this)"
+                onkeydown="if(event.key==='Enter')this.blur()">
+              <button onclick="ajustar(${i},1)" aria-label="Sumar una unidad">+</button>
+            </div>
+            <div class="rap">
+              <button onclick="ajustar(${i},6)" title="Sumar 6">+6</button>
+              <button onclick="ajustar(${i},12)" title="Sumar 12">+12</button>
+              <button onclick="fijar(${i},null,0)" title="Poner en cero">0</button>
+            </div>
+          </div>
+        </td>
+        <td class="n">${money(pmay(r.f))}</td></tr>`).join('')}
+    </tbody></table>
+    ${l.length>400?`<div class="mas">Se muestran las primeras 400 líneas. Usá el filtro para acotar.</div>`:''}
+  </div>`;
+}
+
+/* ── ajuste unidad por unidad, sin salir de la tabla ──
+   Las filas se referencian por índice: los talles llevan comillas
+   (36,5") y meterlas dentro de un atributo onclick rompe el handler. */
+let STKROWS=[];
+function setStock(i,v,tipeando){
+  const r=STKROWS[i]; if(!r) return null;
+  const n=Math.max(0,Math.round(v)||0);
+  r.f.stock[r.t]=n; r.s=n;
+  if(!tipeando){ const inp=$('si-'+i); if(inp) inp.value=n; }
+  const bad=$('sb-'+i);
+  if(bad){ bad.className='stk '+(n===0?'no':n<10?'low':'ok');
+    bad.innerHTML='<i></i>'+(n===0?'—':n); }
+  const fila=$('sr-'+i);
+  if(fila){ const b=fila.querySelector('.stp button'); if(b) b.disabled=n<=0;
+    fila.classList.add('tocada'); }
+  guardar();
+  return n;
+}
+function ajustar(i,d){
+  const r=STKROWS[i]; if(!r) return;
+  const n=setStock(i, r.f.stock[r.t]+d);
+  toast(r.f.sku+' · '+r.t+' → '+n+' u.');
+}
+function fijar(i,el,forzar,tipeando){
+  const r=STKROWS[i]; if(!r) return;
+  if(tipeando && el.value==='') return;        // dejalo borrar sin saltar a 0
+  const v = forzar!==undefined ? forzar : parseInt(el.value,10);
+  const n=setStock(i, isNaN(v)?0:v, tipeando); // al tipear no le pisamos el cursor
+  if(!tipeando) toast(r.f.sku+' · '+r.t+' → '+n+' u.');
+}
+
+/* descargar la planilla con el stock actual, para editar en Excel y volver a pegar */
+function bajarStock(){
+  const rows=[['SKU','Talle','Stock','Modelo','Colorway']];
+  CAT.forEach(m=>m.filas.forEach(f=>m.talles.forEach(t=>
+    rows.push([f.sku,t,f.stock[t],m.nombre,f.n]))));
+  const q=v=>`"${String(v).replace(/"/g,'""')}"`;
+  const csv='\ufeff'+rows.map(r=>r.map(q).join(';')).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='stock-balling-'+hoy()+'.csv'; a.click(); URL.revokeObjectURL(a.href);
+  toast('Planilla descargada · editá la columna Stock y volvé a pegarla');
+}
+
+
+/* ═══════════ ALTA MANUAL DE PRODUCTO ═══════════
+   Dos caminos: crear un modelo nuevo, o sumarle un colorway
+   a un modelo que ya existe (que es el caso más frecuente). */
+const TALLES_SUG={
+  palos:['30"','32"','34"','35"','36,5"','37.5"','37,5"'],
+  calzado:['35','36','37','38','39','40','41','42','43','44'],
+  accesorios:['XXS','XS','S','M','L','JR','SR','Único'],
+  bolsos:['Único'], padel:['Único']};
+let ALTA={talles:[]};
+
+function abrirAlta(){
+  ALTA={talles:[]};
+  $('al').classList.add('on');
+  $('almodo').value='nuevo';
+  pintarAlta();
+  setTimeout(()=>{const e=$('alsku'); if(e) e.focus();},60);
+}
+function cerrarAlta(){ $('al').classList.remove('on'); }
+
+function pintarAlta(){
+  const modo=$('almodo').value;
+  const cats=CATS.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  const mods=CAT.map(m=>`<option value="${m.id}">${m.nombre} · ${m.col} (${m.cat})</option>`).join('');
+  const cols=[...new Set(CAT.map(m=>m.col))].sort();
+  $('albody').innerHTML = modo==='colorway' ? `
+    <div class="mform">
+      <div><label>Modelo al que se agrega</label>
+        <select id="almod" onchange="pintarTalles()">${mods}</select></div>
+      <div class="dos">
+        <div><label>SKU</label><input id="alsku" placeholder="SBA97XX" autocomplete="off"></div>
+        <div><label>Colorway</label><input id="alcol" placeholder="Lowbow Marigold"></div>
+      </div>
+      <div><label>Foto (URL, opcional)</label><input id="alimg" placeholder="https://…"></div>
+      <div><label>Stock inicial en cada talle</label><input id="alstk" type="number" min="0" value="0"></div>
+      <div id="altallesbox"></div>
+    </div>` : `
+    <div class="mform">
+      <div class="dos">
+        <div><label>Categoría</label><select id="alcat" onchange="pintarTalles()">${cats}</select></div>
+        <div><label>Colección</label><input id="alcolec" list="alcolecl" placeholder="Ardeeno, Classics…">
+          <datalist id="alcolecl">${cols.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
+      </div>
+      <div class="dos">
+        <div><label>Modelo</label><input id="alnom" placeholder="Power 97"></div>
+        <div><label>Composición / detalle</label><input id="alcomp" placeholder="97% Carbon"></div>
+      </div>
+      <div class="dos">
+        <div><label>SKU</label><input id="alsku" placeholder="SBA97XX" autocomplete="off"></div>
+        <div><label>Colorway</label><input id="alcol" placeholder="Lowbow Iris"></div>
+      </div>
+      <div class="dos">
+        <div><label>Precio mayorista (s/IVA)</label><input id="almay" type="number" min="0" placeholder="269000"></div>
+        <div><label>PVP sugerido</label><input id="alpvp" type="number" min="0" placeholder="564900"></div>
+      </div>
+      <div class="dos">
+        <div><label>Entrega</label><select id="alent">
+          <option>Inmediato</option><option>Disponible</option><option>Sin stock</option></select></div>
+        <div><label>Stock inicial en cada talle</label><input id="alstk" type="number" min="0" value="0"></div>
+      </div>
+      <div><label>Foto (URL, opcional)</label><input id="alimg" placeholder="https://…"></div>
+      <div id="altallesbox"></div>
+    </div>`;
+  pintarTalles();
+}
+
+function pintarTalles(){
+  const modo=$('almodo').value;
+  let sug, fijos=null;
+  if(modo==='colorway'){
+    const m=CAT.find(x=>x.id===$('almod').value);
+    fijos=m?m.talles:[]; sug=fijos;
+    ALTA.talles=fijos.slice();
+  } else {
+    sug=TALLES_SUG[$('alcat').value]||['Único'];
+    ALTA.talles=ALTA.talles.filter(t=>sug.includes(t));
+  }
+  $('altallesbox').innerHTML=`
+    <label>Talles${fijos?' (los del modelo)':''}</label>
+    <div class="tchips">
+      ${sug.map(t=>`<button type="button" class="tch ${ALTA.talles.includes(t)?'on':''}"
+        ${fijos?'disabled':''} onclick="toggleTalle(${JSON.stringify(t).replace(/"/g,'&quot;')})">${t}</button>`).join('')}
+      ${ALTA.talles.filter(t=>!sug.includes(t)).map(t=>`<button type="button" class="tch on"
+        onclick="toggleTalle(${JSON.stringify(t).replace(/"/g,'&quot;')})">${t}</button>`).join('')}
+    </div>
+    ${fijos?'':`<div class="tadd"><input id="altnuevo" placeholder="Otro talle"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();addTalle()}">
+      <button type="button" onclick="addTalle()">Agregar talle</button></div>`}`;
+}
+function toggleTalle(t){
+  const i=ALTA.talles.indexOf(t);
+  if(i<0) ALTA.talles.push(t); else ALTA.talles.splice(i,1);
+  pintarTalles();
+}
+function addTalle(){
+  const el=$('altnuevo'), v=(el.value||'').trim();
+  if(!v) return;
+  if(!ALTA.talles.includes(v)) ALTA.talles.push(v);
+  el.value=''; pintarTalles(); $('altnuevo').focus();
+}
+
+function guardarAlta(){
+  const modo=$('almodo').value;
+  const sku=($('alsku').value||'').trim().toUpperCase();
+  const col=($('alcol').value||'').trim();
+  const img=($('alimg').value||'').trim();
+  const stk=Math.max(0,parseInt($('alstk').value,10)||0);
+  if(!sku) return err('Falta el SKU','alsku');
+  if(idx[sku]) return err('El SKU '+sku+' ya existe en el catálogo','alsku');
+  if(!col) return err('Falta el nombre del colorway','alcol');
+  if(!ALTA.talles.length) return err('Elegí al menos un talle');
+
+  const foto=img||'';
+  const nuevaFila={n:col,sku,img:foto};
+
+  if(modo==='colorway'){
+    const m=CAT.find(x=>x.id===$('almod').value);
+    nuevaFila.pvp=m.pvp; nuevaFila.may=m.may; nuevaFila.mod=m.id;
+    nuevaFila.stock={}; m.talles.forEach(t=>nuevaFila.stock[t]=stk);
+    if(!nuevaFila.img) nuevaFila.img=m.filas[0].img;
+    m.filas.push(nuevaFila);
+    idx[sku]={m,f:nuevaFila};
+    cerrarAlta(); guardar(); toast(sku+' agregado a '+m.nombre); ir('stock'); return;
+  }
+
+  const nom=($('alnom').value||'').trim();
+  const colec=($('alcolec').value||'').trim();
+  const may=parseFloat($('almay').value), pvp=parseFloat($('alpvp').value);
+  if(!nom) return err('Falta el nombre del modelo','alnom');
+  if(!colec) return err('Falta la colección','alcolec');
+  if(!may||may<=0) return err('Falta el precio mayorista','almay');
+  if(!pvp||pvp<=0) return err('Falta el PVP sugerido','alpvp');
+
+  const m={id:'usr'+Date.now(), ent:$('alent').value, cat:$('alcat').value, col:colec,
+    nombre:nom, comp:($('alcomp').value||'').trim(), talles:ALTA.talles.slice(),
+    may, pvp, filas:[nuevaFila], nuevo:true};
+  m.specs=[m.comp].filter(Boolean);
+  nuevaFila.pvp=pvp; nuevaFila.may=may; nuevaFila.mod=m.id;
+  nuevaFila.stock={}; m.talles.forEach(t=>nuevaFila.stock[t]=stk);
+  if(!nuevaFila.img) nuevaFila.img=(deCat(m.cat)[0]||CAT[0]).filas[0].img;
+  CAT.push(m); idx[sku]={m,f:nuevaFila};
+  cerrarAlta(); guardar(); toast(nom+' · '+col+' creado'); ir('stock');
+}
+function err(msg,campo){ toast(msg); if(campo&&$(campo)) $(campo).focus(); return false; }
+
+/* ═══ carga masiva de stock ═══ */
+let STKPREV=null;
+function abrirStk(){ $('stk').classList.add('on'); $('stkt').value=''; $('stkr').innerHTML='';
+  STKPREV=null; $('stkap').disabled=true; setTimeout(()=>$('stkt').focus(),50); }
+function cerrarStk(){ $('stk').classList.remove('on'); STKPREV=null; }
+function validarStk(){
+  const txt=$('stkt').value.trim();
+  if(!txt){ toast('Pegá la planilla o escribí las líneas'); return; }
+  const modo=$('stkm').value;    // set | sumar
+  const ok=[], err=[];
+  txt.split(/\r?\n/).forEach(linea=>{
+    let L=linea.trim(); if(!L) return;
+    L=L.replace(/^"|"$/g,'');
+    const p=L.split(/[;,\t]+|\s{2,}|\s+/).map(x=>x.replace(/^"|"$/g,'')).filter(Boolean);
+    if(/^sku$/i.test(p[0])) return;                    // encabezado de la planilla
+    if(p.length<2){ err.push([L,'formato incompleto']); return; }
+    const sku=p[0].toUpperCase(), r=idx[sku];
+    if(!r){ err.push([L,'SKU inexistente']); return; }
+    const cant=parseInt(p[p.length-1],10);
+    if(isNaN(cant)||cant<0){ err.push([L,'cantidad inválida']); return; }
+    let talle = p.length>2 ? p.slice(1,-1).join(' ') : (r.m.talles.length===1?r.m.talles[0]:null);
+    if(!talle){ err.push([L,'falta el talle ('+r.m.talles.join(' / ')+')']); return; }
+    const real=r.m.talles.find(t=>t.replace(/[",.\s]/g,'').toLowerCase()===String(talle).replace(/[",.\s]/g,'').toLowerCase());
+    if(!real){ err.push([L,'talle inválido ('+r.m.talles.join(' / ')+')']); return; }
+    const antes=r.f.stock[real];
+    const desp = modo==='sumar' ? antes+cant : cant;
+    ok.push({sku,talle:real,nombre:r.m.nombre+' '+r.f.n,antes,desp});
+  });
+  STKPREV={ok,modo};
+  $('stkr').innerHTML=`
+    ${ok.length?`<div class="padok"><b>${ok.length}</b> línea${ok.length>1?'s':''} lista${ok.length>1?'s':''} para aplicar
+      · ${modo==='sumar'?'se suman al stock actual':'reemplazan el stock actual'}</div>
+      <div class="stkprev"><table class="padt"><thead><tr><th>SKU</th><th>Producto</th><th>Talle</th>
+        <th class="n">Antes</th><th class="n">Después</th></tr></thead><tbody>
+        ${ok.slice(0,120).map(o=>`<tr><td class="m">${o.sku}</td><td>${o.nombre}</td><td class="m">${o.talle}</td>
+          <td class="n" style="color:var(--mute)">${o.antes}</td>
+          <td class="n"><b class="${o.desp>o.antes?'sube':o.desp<o.antes?'baja':''}">${o.desp}</b></td></tr>`).join('')}
+      </tbody></table>${ok.length>120?`<div class="mas">…y ${ok.length-120} líneas más</div>`:''}</div>`:''}
+    ${err.length?`<div class="paderr"><b>${err.length}</b> con problemas · no se van a aplicar</div>
+      <table class="padt"><tbody>${err.slice(0,30).map(e=>`<tr><td colspan="2" class="m">${esc(e[0])}</td>
+        <td colspan="3" class="warnx">${e[1]}</td></tr>`).join('')}</tbody></table>`:''}`;
+  $('stkap').disabled=!ok.length;
+}
+function aplicarStk(){
+  if(!STKPREV||!STKPREV.ok.length) return;
+  STKPREV.ok.forEach(o=>{ idx[o.sku].f.stock[o.talle]=o.desp; });
+  const n=STKPREV.ok.length; cerrarStk();
+  guardar();
+  toast(n+' línea'+(n>1?'s':'')+' de stock actualizada'+(n>1?'s':''));
+  ir('stock');
+}
+
+function vCuentas(){
+  $('view').innerHTML=`<div class="title"><div><div class="eb">Cobranzas</div><h1 class="wide">Cuentas</h1></div></div>
+  <div class="panel"><table><thead><tr><th>Cliente</th><th>CUIT</th>
+    <th class="n">Pedidos</th><th class="n">Facturado</th><th>Estado</th></tr></thead><tbody>
+    <tr><td style="font-weight:600">${CLI.razon}</td><td class="m">${CLI.cuit}</td>
+    <td class="n">${PED.length}</td><td class="n">${money(PED.reduce((a,p)=>a+p.t,0))}</td>
+    <td><span class="badge t">Activa</span></td></tr>
+  </tbody></table></div>`;
+}
+
+function vPromos(){
+  const objetivos={categoria:CATS.map(c=>[c.id,c.nombre]),
+    coleccion:[...new Set(CAT.map(m=>m.col))].sort().map(c=>[c,c]),
+    modelo:CAT.map(m=>[m.id,m.nombre+' · '+m.col])};
+  $('view').innerHTML=`
+  <div class="title"><div><div class="eb">Comercial</div><h1 class="wide">Promociones</h1></div>
+    <div class="sub">El descuento se aplica sobre el precio mayorista y se ve al instante en el catálogo.</div></div>
+  <div class="box" style="margin-bottom:14px">
+    <h3>Nueva promoción</h3>
+    <div class="pform">
+      <input id="pn" placeholder="Nombre (ej. Liquidación invierno)">
+      <select id="pt" onchange="pOpts()">
+        <option value="coleccion">Colección</option>
+        <option value="categoria">Categoría</option>
+        <option value="modelo">Modelo puntual</option>
+      </select>
+      <select id="pv"></select>
+      <input id="pp" type="number" min="1" max="90" placeholder="% desc." value="15">
+      <input id="ph" type="date" value="${new Date(Date.now()+2592e6).toISOString().slice(0,10)}">
+      <button class="add" onclick="crearPromo()">Crear promoción</button>
+    </div>
+  </div>
+  ${PROMOS.length?`<div class="panel"><table><thead><tr><th>Promoción</th><th>Alcance</th>
+    <th class="n">Descuento</th><th class="n">SKUs</th><th>Vigencia</th><th></th></tr></thead><tbody>
+    ${PROMOS.map(p=>{
+      const ms=CAT.filter(m=>promoDe(m)&&promoDe(m).id===p.id);
+      const sk=ms.reduce((a,m)=>a+m.filas.length*m.talles.length,0);
+      const nm=(objetivos[p.tipo].find(x=>x[0]===p.valor)||[,p.valor])[1];
+      return `<tr><td style="font-weight:600">${p.nombre}</td>
+        <td><span class="badge k">${p.tipo}</span> ${nm}</td>
+        <td class="n"><span class="promo">−${p.pct}%</span></td>
+        <td class="n">${sk}</td>
+        <td class="m">${p.hasta||'sin límite'} ${vigente(p)?'':'<span class="badge e">vencida</span>'}</td>
+        <td><button class="lk" onclick="borrarPromo('${p.id}')">Eliminar</button></td></tr>`}).join('')}
+  </tbody></table></div>`:
+  `<div class="empty"><div class="t">No hay promociones activas</div>
+   <div class="d">Creá una arriba: elegí el alcance, el porcentaje y hasta cuándo corre.</div></div>`}`;
+  pOpts();
+}
+function pOpts(){
+  const t=$('pt').value||'coleccion';
+  const o={categoria:CATS.map(c=>[c.id,c.nombre]),
+    coleccion:[...new Set(CAT.map(m=>m.col))].sort().map(c=>[c,c]),
+    modelo:CAT.map(m=>[m.id,m.nombre+' · '+m.col])}[t];
+  $('pv').innerHTML=o.map(([v,l])=>`<option value="${esc(v)}">${l}</option>`).join('');
+}
+function crearPromo(){
+  const n=$('pn').value.trim(), pct=parseInt($('pp').value,10);
+  if(!n){ toast('Poné un nombre para la promoción'); $('pn').focus(); return; }
+  if(!pct||pct<1||pct>90){ toast('El descuento tiene que estar entre 1% y 90%'); return; }
+  PROMOS.unshift({id:'pr'+Date.now(),nombre:n,tipo:$('pt').value,valor:$('pv').value,
+    pct,hasta:$('ph').value||null});
+  toast('Promoción "'+n+'" creada'); guardar(); vPromos();
+}
+function borrarPromo(id){
+  const p=PROMOS.find(x=>x.id===id);
+  PROMOS=PROMOS.filter(x=>x.id!==id); toast('Promoción "'+p.nombre+'" eliminada'); guardar(); vPromos();
+}
+
+const V={catalogo:vCatalogo,pedido:vPedido,historial:vHistorial,
+  entrantes:vEntrantes,remito:vRemito,promos:vPromos,stock:vStock,cuentas:vCuentas};
+
+$('pw').addEventListener('keydown',e=>{if(e.key==='Enter')entrar();});
+
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Balling LatAm · Pedidos mayoristas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ─────────────────────────────────────────────────────────────
    Tipografía igual a ballinghockey.com.ar:
    · Instrument Sans → títulos, navegación, botones, UI  (Google Fonts, libre)
    · Vaud            → texto corrido y precios            (licenciada, self-hosted)
