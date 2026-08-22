@@ -697,7 +697,7 @@ table.remt tfoot tr.big td{font-weight:700;font-size:18px;border-top:1px solid v
         <button class="sync local" id="sync" onclick="abrirCfg()"><i>○</i>Solo en esta PC</button>
       </div>
       <div class="acct"><div class="a" id="who"></div><div class="b" id="sub"></div></div>
-      <button class="out" onclick="location.reload()">Salir</button>
+      <button class="out" onclick="salir()">Salir</button>
     </div>
   </div></header>
   <main id="view"></main>
@@ -1492,7 +1492,9 @@ function guardarSesion(d){
        refreshToken:d.refreshToken, exp:Date.now()+(+d.expiresIn||3600)*1000-60000};
   try{ localStorage.setItem(LS+'-ses',JSON.stringify(SES)); }catch(e){}
 }
-function cerrarSesion(){ SES=null; try{localStorage.removeItem(LS+'-ses');}catch(e){} }
+function cerrarSesion(){ SES=null;
+  try{ localStorage.removeItem(LS+'-ses'); localStorage.removeItem(LS+'-data'); }catch(e){}
+}
 
 /* el token vive una hora: lo renovamos antes de que venza */
 async function token(){
