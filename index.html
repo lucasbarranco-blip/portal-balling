@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ─────────────────────────────────────────────────────────────
    Tipografía igual a ballinghockey.com:
@@ -123,6 +122,11 @@ nav .n{font:500 10px/1 'Instrument Sans';background:var(--teal);color:#fff;paddi
   font:400 11.5px/1.7 ui-monospace,monospace;white-space:pre;overflow-x:auto;margin:10px 0 4px}
 .cgpaso{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line-2);font-size:13px}
 .cgpaso:last-child{border-bottom:none}
+.cgmud{margin-top:16px;padding:13px 15px;background:var(--paper);border:1px solid var(--line);font-size:13px}
+.cgmud .k{display:block;font:500 9px/1 'Instrument Sans';letter-spacing:.14em;
+  text-transform:uppercase;color:var(--mute);margin-bottom:7px}
+.cgmb{display:flex;gap:8px;margin-top:11px}
+.cgmb label{cursor:pointer}
 .cgpaso b{flex:none;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;
   font:600 11px/22px 'Instrument Sans';text-align:center}
 .out{font:500 11px/1 'Instrument Sans';color:#75756D;text-transform:uppercase;letter-spacing:.09em;
@@ -731,30 +735,42 @@ table.remt tfoot tr.big td{font-weight:700;font-size:18px;border-top:1px solid v
 </div>
 
 <div id="cg" class="modal">
-  <div class="padbox" style="max-width:600px">
+  <div class="padbox" style="max-width:620px">
     <div class="padh">
       <div><h3>Guardar entre computadoras</h3>
         <p>Sin base, los cambios quedan en este navegador. Conectá una y el estado se comparte.</p></div>
       <button class="x" onclick="cerrarCfg()">×</button>
     </div>
     <div class="padb">
-      <div class="cgpaso"><b>1</b><div>Creá un proyecto gratis en <b>supabase.com</b>.</div></div>
-      <div class="cgpaso"><b>2</b><div>En el SQL editor, pegá y ejecutá esto:
-        <div class="cgcode">create table estado (
-  id text primary key,
-  data jsonb not null,
-  actualizado timestamptz default now()
-);
-alter table estado enable row level security;
-create policy "portal" on estado for all
-  using (true) with check (true);</div></div></div>
-      <div class="cgpaso"><b>3</b><div>Copiá de <b>Settings → API</b> la Project URL y la clave <b>anon public</b>, y pegalas acá abajo.</div></div>
+      <div class="cgpaso"><b>1</b><div>Creá un proyecto gratis en <b>console.firebase.google.com</b>
+        y activá <b>Firestore Database</b> en modo producción.</div></div>
+      <div class="cgpaso"><b>2</b><div>En <b>Reglas</b>, pegá esto y publicá:
+        <div class="cgcode">rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    match /estado/{doc} {
+      allow read, write: if true;
+    }
+  }
+}</div></div></div>
+      <div class="cgpaso"><b>3</b><div>En <b>Configuración del proyecto → General</b> copiá el
+        <b>ID del proyecto</b> y la <b>Clave de API web</b>, y pegalos acá abajo.</div></div>
       <div class="mform" style="margin-top:14px">
-        <div><label>Project URL</label><input id="cgu" placeholder="https://xxxx.supabase.co" autocomplete="off"></div>
-        <div><label>Anon public key</label><input id="cgk" placeholder="eyJhbGciOi…" autocomplete="off"></div>
+        <div><label>Project ID</label><input id="cgp" placeholder="balling-b2b" autocomplete="off"></div>
+        <div><label>Web API key</label><input id="cgk" placeholder="AIza…" autocomplete="off"></div>
       </div>
-      <div class="padej">La clave anon es pública por diseño. Aun así, este portal es de uso interno:
-        no publiques el link fuera de tus mayoristas.</div>
+      <div class="padej">La clave web es pública por diseño. Aun así, este portal es de uso interno:
+        no publiques el link fuera de tus mayoristas. Firestore no pausa proyectos por inactividad,
+        y sin tarjeta cargada nunca puede generar un cobro.</div>
+      <div class="cgmud">
+        <span class="k">Mudar de cuenta</span>
+        Bajá una copia, conectá la base nueva y volvé a subirla. No se pierde nada.
+        <div class="cgmb">
+          <button class="und2" onclick="bajarCopia()">Descargar copia</button>
+          <label class="und2" for="cgf">Restaurar copia</label>
+          <input type="file" id="cgf" accept="application/json" hidden onchange="subirCopia(this)">
+        </div>
+      </div>
     </div>
     <div class="padf">
       <button class="und2 no" onclick="desconectarCfg()">Desconectar</button>
@@ -1096,14 +1112,7 @@ const CAT=[
 /* ═══════════════════════════════════════════════════════════
    CONFIG. Vacío = modo demo con el catálogo real de ballinghockey.com
    ═══════════════════════════════════════════════════════════ */
-const SUPABASE_URL = "";
-const SUPABASE_ANON_KEY = "";
 const IVA = .21;
-/* Los precios salen de LISTA_PRECIOS_BALLING_AGOSTO.xlsx, en pesos:
-   may = PRECIO S/IVA (lo que paga el mayorista) · pvp = PRECIO PUBLICO */
-let sb=null, DEMO=true, S={};
-if(SUPABASE_URL&&SUPABASE_ANON_KEY){ sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY); DEMO=false; }
-
 const CW={Frost:'#A9C7DE',Blush:'#C9A2C0',Aqua:'#4FA89A',Inferno:'#C7462A',Sage:'#B7C2A8',Mauve:'#A98CB0',
   Marigold:'#E0A32B',Speedwell:'#4E6FBF',Hollyhock:'#9C3F6B',Lilac:'#C3AEDE',Iris:'#5F5FC4',Ashen:'#8C8C86',
   Tephra:'#4A403B',Mint:'#A5DFCB',Aether:'#CAC3B4',Navy:'#243863',Taupe:'#A6998B',Teal:'#2E6E70',
@@ -1306,20 +1315,17 @@ document.addEventListener('keydown',e=>{
 });
 
 
-/* ═══════════════════ SINCRONIZACIÓN ═══════════════════
-   Sin base configurada la app guarda en este navegador (localStorage).
-   Con Supabase conectado, el estado viaja entre computadoras: se guarda
-   una única fila JSON con pedidos, promos, stock y productos manuales. */
+/* ═══════════════════ SINCRONIZACIÓN (Firestore) ═══════════════════
+   Se habla con Firestore por su API REST: no hace falta cargar ninguna
+   librería externa, así que la app no depende de ningún CDN para andar.
+   Todo el estado vive en un único documento JSON (estado/balling).
+   Sin base configurada, guarda en este navegador (localStorage).      */
 const LS='balling-b2b';
-let CFG=null, SB=null, SYNC={estado:'local', ts:null, cola:null};
+let CFG=null, SYNC={estado:'local', ts:null, cola:null};
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
-
-function iniciarSB(){
-  if(!CFG||!CFG.url||!CFG.key){ SB=null; SYNC.estado='local'; return false; }
-  try{ SB=supabase.createClient(CFG.url,CFG.key); SYNC.estado='conectado'; return true; }
-  catch(e){ SB=null; SYNC.estado='error'; return false; }
-}
-iniciarSB();
+const conectado=()=>!!(CFG&&CFG.pid&&CFG.key);
+const docURL=()=>!conectado()?'':`https://firestore.googleapis.com/v1/projects/${encodeURIComponent(CFG.pid)}`
+  +`/databases/(default)/documents/estado/balling?key=${encodeURIComponent(CFG.key)}`;
 
 /* ── qué se persiste ── */
 function snapshot(){
@@ -1348,34 +1354,38 @@ function aplicar(d){
   SYNC.ts=d.ts||null;
 }
 
-/* ── guardar (con espera para no golpear la base en cada tecla) ── */
+/* ── guardar (con espera, para no escribir en cada tecla) ── */
 function guardar(){
   clearTimeout(SYNC.cola);
-  SYNC.cola=setTimeout(guardarYa,700);
+  SYNC.cola=setTimeout(guardarYa,900);
   pintarSync('guardando');
 }
 async function guardarYa(){
   const d=snapshot();
   try{ localStorage.setItem(LS+'-data',JSON.stringify(d)); }catch(e){}
-  if(!SB){ SYNC.ts=d.ts; pintarSync('local'); return; }
+  if(!conectado()){ SYNC.ts=d.ts; pintarSync('local'); return; }
   try{
-    const {error}=await SB.from('estado').upsert({id:'balling',data:d,actualizado:d.ts});
-    if(error) throw error;
+    const r=await fetch(docURL(),{method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:{data:{stringValue:JSON.stringify(d)}}})});
+    if(!r.ok) throw new Error(await r.text());
     SYNC.ts=d.ts; pintarSync('ok');
   }catch(e){ pintarSync('error'); }
 }
 async function cargar(){
   let local=null;
   try{ local=JSON.parse(localStorage.getItem(LS+'-data')||'null'); }catch(e){}
-  if(!SB){ aplicar(local); pintarSync('local'); return; }
+  if(!conectado()){ aplicar(local); pintarSync('local'); return; }
   pintarSync('cargando');
   try{
-    const {data,error}=await SB.from('estado').select('data').eq('id','balling').maybeSingle();
-    if(error) throw error;
-    const remoto=data&&data.data;
-    /* gana el más reciente entre lo de la nube y lo de esta máquina */
+    const r=await fetch(docURL(),{cache:'no-store'});
+    let remoto=null;
+    if(r.ok){ const j=await r.json();
+      const raw=j.fields&&j.fields.data&&j.fields.data.stringValue;
+      if(raw) remoto=JSON.parse(raw); }
+    else if(r.status!==404) throw new Error(await r.text());
+    /* gana el más reciente entre la nube y esta computadora */
     if(remoto && (!local || (remoto.ts||'')>=(local.ts||''))) aplicar(remoto);
-    else if(local){ aplicar(local); guardarYa(); }
+    else if(local){ aplicar(local); await guardarYa(); }
     pintarSync('ok');
   }catch(e){ aplicar(local); pintarSync('error'); }
 }
@@ -1387,30 +1397,61 @@ function pintarSync(e){
   const [i,t]=M[e]||M.local;
   el.className='sync '+e;
   el.innerHTML=`<i>${i}</i>${t}${SYNC.ts&&(e==='ok'||e==='local')?`<em>${hora(SYNC.ts)}</em>`:''}`;
-  el.title = SB ? 'Base conectada · los cambios se ven en cualquier computadora'
-                : 'Sin base configurada · los cambios quedan en este navegador';
+  el.title = conectado() ? 'Base conectada · los cambios se ven en cualquier computadora'
+                         : 'Sin base · los cambios quedan en este navegador';
 }
 const hora=t=>{try{const d=new Date(t);
   return d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});}catch(e){return ''}};
 
-/* ── configuración de la base, sin tocar el código ── */
+/* ── configuración, sin tocar el código ── */
 function abrirCfg(){
-  $('cgu').value=(CFG&&CFG.url)||''; $('cgk').value=(CFG&&CFG.key)||'';
-  $('cg').classList.add('on'); setTimeout(()=>$('cgu').focus(),50);
+  $('cgp').value=(CFG&&CFG.pid)||''; $('cgk').value=(CFG&&CFG.key)||'';
+  $('cg').classList.add('on'); setTimeout(()=>$('cgp').focus(),50);
 }
 function cerrarCfg(){ $('cg').classList.remove('on'); }
 async function guardarCfg(){
-  const url=$('cgu').value.trim().replace(/\/$/,''), key=$('cgk').value.trim();
-  if(!url||!key){ toast('Completá la URL y la anon key'); return; }
-  CFG={url,key}; localStorage.setItem(LS+'-cfg',JSON.stringify(CFG));
-  if(!iniciarSB()){ toast('No se pudo iniciar la conexión'); return; }
+  const pid=$('cgp').value.trim(), key=$('cgk').value.trim();
+  if(!pid||!key){ toast('Completá el Project ID y la API key'); return; }
+  const antes=CFG; CFG={pid,key};
+  pintarSync('cargando');
+  try{
+    const r=await fetch(docURL(),{cache:'no-store'});
+    if(!r.ok && r.status!==404) throw new Error('respuesta '+r.status);
+  }catch(e){
+    CFG=antes; pintarSync(conectado()?'ok':'local');
+    toast('No se pudo conectar. Revisá el Project ID, la key y las reglas.'); return;
+  }
+  localStorage.setItem(LS+'-cfg',JSON.stringify(CFG));
   cerrarCfg(); toast('Base conectada · sincronizando');
   await cargar(); await guardarYa(); ir(tab);
 }
 function desconectarCfg(){
-  CFG=null; SB=null; localStorage.removeItem(LS+'-cfg');
-  SYNC.estado='local'; cerrarCfg(); pintarSync('local');
+  CFG=null; localStorage.removeItem(LS+'-cfg');
+  cerrarCfg(); pintarSync('local');
   toast('Desconectado · los cambios quedan en esta PC');
+}
+
+/* ── mudanza de cuenta: bajar y subir una copia completa ──
+   Sirve para pasar el portal a la cuenta del cliente sin perder nada. */
+function bajarCopia(){
+  const d=snapshot();
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,1)],{type:'application/json'}));
+  a.download='balling-respaldo-'+hoy()+'.json'; a.click(); URL.revokeObjectURL(a.href);
+  toast('Copia descargada');
+}
+function subirCopia(input){
+  const f=input.files&&input.files[0]; if(!f) return;
+  const fr=new FileReader();
+  fr.onload=async()=>{
+    try{
+      const d=JSON.parse(fr.result);
+      if(!d||!d.v) throw new Error('formato');
+      aplicar(d); await guardarYa();
+      cerrarCfg(); toast('Copia restaurada'); ir(tab);
+    }catch(e){ toast('El archivo no es un respaldo válido'); }
+  };
+  fr.readAsText(f); input.value='';
 }
 
 /* ═══ acceso ═══ */
@@ -1421,11 +1462,7 @@ async function entrar(){
     if(e==='demo'&&p==='demo'){S={rol:'may',n:CLI.razon,s:'CUIT '+CLI.cuit};return abrir();}
     $('lerr').textContent='Usuario o contraseña incorrectos. Probá demo / demo.';return;
   }
-  const {data,error}=await sb.auth.signInWithPassword({email:e,password:p});
-  if(error){$('lerr').textContent='No pudimos entrar: revisá el email y la contraseña.';return;}
-  const {data:pf}=await sb.from('perfiles').select('rol').eq('id',data.user.id).single();
-  S={rol:pf?.rol==='admin'?'admin':'may',n:data.user.email,s:''};
-  abrir();
+  $('lerr').textContent='Usuario o contraseña incorrectos.';
 }
 async function abrir(){
   $('login').style.display='none'; $('app').classList.add('on');
@@ -1867,13 +1904,6 @@ async function enviar(){
   const t=totales(); if(!t.u) return;
   const items=Object.keys(cart).map(k=>{const{m,f,t:tl}=find(k);
     return{sku:f.sku+'-'+tl,desc:`${m.nombre} ${f.n} ${tl}`,cant:cart[k],precio:pmay(f),sub:cart[k]*pmay(f)};});
-  if(false){
-    const {data:p,error}=await sb.from('pedidos').insert({cliente_id:CLI.id,estado:'pendiente',
-      notas:$('notas')?.value||null}).select().single();
-    if(error){toast('No se pudo enviar el pedido. Reintentá en unos segundos.');return;}
-    await sb.from('pedido_items').insert(items.map(i=>({pedido_id:p.id,sku:i.sku,descripcion:i.desc,
-      cantidad:i.cant,precio_unit:i.precio,subtotal:i.sub})));
-  }
   const num=Math.max(...PED.map(p=>p.n))+1;
   PED.unshift({n:num,f:new Date().toISOString().slice(0,10),e:'pendiente',t:t.total,u:t.u,items:{...cart},notas:$('notas')?.value||''});
   cart={}; draft={}; guardar(); toast('Pedido #'+num+' enviado'); nav(); ir('historial');
