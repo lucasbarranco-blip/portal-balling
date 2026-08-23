@@ -1577,16 +1577,22 @@ function cambiarModo(m){
   setTimeout(()=>$('em').focus(),40);
 }
 
-/* Cuenta de prueba: escribiendo demo/demo entra con una cuenta real
-   de mayorista, para poder recorrer el portal sin registrarse. */
-const DEMO={alias:'demo', clave:'demo',
-  mail:'demo@balling.portal', pass:'demo-portal-2026'};
+/* ── Cuentas de prueba ──────────────────────────────────────────
+   Atajos para recorrer el portal sin registrarse:
+     demo  / demo   -> entra como mayorista
+     admin / admin  -> entra como representante
+   OJO: estas claves quedan a la vista de cualquiera que abra el
+   codigo. Sirven para probar; borralas antes de usarlo en serio
+   (se quita esta constante y se borran las cuentas en Firebase). */
+const ATAJOS=[
+  {alias:'demo',  clave:'demo',  mail:'demo@balling.portal',  pass:'demo-portal-2026'},
+  {alias:'admin', clave:'admin', mail:'admin@balling.portal', pass:'admin-portal-2026'}
+];
 
 async function entrar(){
   let e=$('em').value.trim(), p=$('pw').value;
-  if(e.toLowerCase()===DEMO.alias && p===DEMO.clave){
-    e=DEMO.mail; p=DEMO.pass; MODO='entrar';
-  }
+  const atajo=ATAJOS.find(a=>a.alias===e.toLowerCase() && a.clave===p);
+  if(atajo){ e=atajo.mail; p=atajo.pass; MODO='entrar'; }
   const err=$('lerr'); err.textContent='';
   if(!e||!p){ err.textContent='Completá email y contraseña.'; return; }
   if(!conectado()){ err.textContent='El portal no tiene base configurada.'; return; }
