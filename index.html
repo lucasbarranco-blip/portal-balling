@@ -109,7 +109,7 @@ nav .n{font:500 10px/1 'Instrument Sans';background:var(--ink-2);color:#F9F9F9;p
   border-bottom:1px solid var(--line-2)}
 .qsi:last-child{border-bottom:none}
 .qsi:hover,.qsi.on{background:var(--teal-l)}
-.qsi img{width:34px;height:34px;object-fit:cover;border:1px solid var(--line-2);flex:none}
+.qsi img{width:34px;height:34px;object-fit:contain;border:1px solid var(--line-2);flex:none}
 .qsi .qn{flex:1;min-width:0}
 .qsi .qn b{display:block;font:600 12px 'Instrument Sans';letter-spacing:-.01em}
 .qsi .qn em{display:block;font:400 11px 'Instrument Sans';font-style:normal;color:var(--mute);
@@ -160,9 +160,12 @@ main{padding:24px 22px 128px;width:100%;max-width:1340px;margin:0 auto;flex:1}
 /* ═══ categorías ═══ */
 /* todas las fichas del mismo tamaño */
 .cats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:6px}
-.cats.subs{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
-/* Las fotos de Balling son verticales (1200x1800): la ficha copia esa
-   proporción para que el producto ocupe todo y no quede aire a los costados. */
+/* Las subcolecciones van en fichas más chicas y apaisadas: así entran
+   todas en pantalla sin tener que scrollear. */
+.cats.subs{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.cats.subs .fig{aspect-ratio:1/1}
+.cats.subs .ov{padding:9px 11px}
+/* Fichas verticales, con la foto completa adentro. */
 .cat{position:relative;border:1px solid var(--line);background:var(--card);
   display:flex;flex-direction:column;text-align:left;width:100%;
   transition:border-color .15s,box-shadow .15s;overflow:hidden}
@@ -203,7 +206,7 @@ main{padding:24px 22px 128px;width:100%;max-width:1340px;margin:0 auto;flex:1}
 .mod.open{border-color:var(--ink)}
 .mh{display:grid;grid-template-columns:74px 1fr auto auto;gap:16px;align-items:center;padding:11px 14px;cursor:pointer}
 .mh:hover{background:#FAFAF8}
-.ph{width:74px;height:74px;object-fit:cover;background:var(--paper);border:1px solid var(--line-2)}
+.ph{width:74px;height:74px;object-fit:contain;background:var(--paper);border:1px solid var(--line-2)}
 .mn{font-family:'Instrument Sans';font-weight:600;font-size:17.5px;letter-spacing:-.03em;line-height:1.18}
 .specs{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
 .sp{font:500 9.5px/1 'Instrument Sans';letter-spacing:.06em;text-transform:uppercase;padding:4px 6px;
@@ -243,7 +246,7 @@ td.l{text-align:left;padding-left:14px}
 
 /* fila con foto */
 .cw{display:flex;align-items:center;gap:11px}
-.cw img{width:52px;height:52px;object-fit:cover;border:1px solid var(--line-2);background:var(--paper);flex:none}
+.cw img{width:52px;height:52px;object-fit:contain;border:1px solid var(--line-2);background:var(--paper);flex:none}
 .rn{font-family:'Instrument Sans';font-weight:600;font-size:14px;letter-spacing:-.01em}
 .rs{font:400 10px 'Instrument Sans';color:var(--mute);margin-top:3px}
 td.pr{font-family:'Instrument Sans';font-size:13px;white-space:nowrap;text-align:right;font-weight:600}
@@ -279,7 +282,7 @@ td.pr .pr-of{color:var(--ember)}
 .zoom:hover img{opacity:.9}
 .zoom:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 .ph.zoom{width:74px;height:74px}
-.ph.zoom img{width:74px;height:74px;object-fit:cover;background:var(--paper);border:1px solid var(--line-2)}
+.ph.zoom img{width:74px;height:74px;object-fit:contain;background:var(--paper);border:1px solid var(--line-2)}
 
 /* stepper */
 .stp{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:3px;background:var(--card);overflow:hidden}
@@ -355,14 +358,14 @@ tfoot td.l{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:up
 .grp{border-bottom:1px solid var(--line)}
 .grp:last-child{border-bottom:none}
 .gh{display:flex;align-items:center;gap:11px;padding:10px 14px;background:#F7F7F4;border-bottom:1px solid var(--line-2)}
-.gh img{width:34px;height:34px;object-fit:cover;border:1px solid var(--line-2)}
+.gh img{width:34px;height:34px;object-fit:contain;border:1px solid var(--line-2)}
 .gh .gn{font-family:'Instrument Sans';font-weight:600;font-size:14.5px;letter-spacing:-.025em}
 .gh .gc{font:400 10px 'Instrument Sans';color:var(--mute);margin-left:auto}
 .ln{display:grid;grid-template-columns:1fr 118px 92px 96px 30px;gap:10px;align-items:center;
   padding:9px 14px;border-bottom:1px solid var(--line-2)}
 .ln:last-child{border-bottom:none}
 .ln .li{display:flex;align-items:center;gap:10px}
-.ln .li img{width:40px;height:40px;object-fit:cover;border:1px solid var(--line-2);flex:none}
+.ln .li img{width:40px;height:40px;object-fit:contain;border:1px solid var(--line-2);flex:none}
 .ln .d1{font-family:'Instrument Sans';font-size:13.5px;font-weight:600}
 .ln .d2{font:400 10px 'Instrument Sans';color:var(--mute);margin-top:2px}
 .ln .p1,.ln .p2{font-family:'Instrument Sans';text-align:right;font-size:13px}
@@ -437,11 +440,32 @@ tfoot td.l{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:up
   border:1px solid #33333A;color:#fff;font-size:20px;border-radius:2px}
 #lb .nav button:hover{background:#fff;color:var(--ink)}
 #lb .lbth{display:flex;gap:7px;justify-content:center;padding:14px 6px 4px;overflow-x:auto}
-#lb .lbth img{width:62px;height:62px;object-fit:cover;background:#fff;border:2px solid transparent;
+#lb .lbth img{width:62px;height:62px;object-fit:contain;background:#fff;border:2px solid transparent;
   opacity:.5;cursor:pointer;flex:none}
 #lb .lbth img.on,#lb .lbth img:hover{opacity:1;border-color:var(--teal)}
 
 @media(max-width:1180px){ .cats{grid-template-columns:repeat(3,1fr)} }
+
+/* placa que reemplaza a la foto principal cuando hay varios colores */
+.ph.vacia{display:grid;place-items:center;background:var(--paper);
+  border:1px dashed var(--line);color:var(--mute);text-align:center}
+.ph.vacia span{font:600 17px/1 'Instrument Sans';color:var(--ink)}
+.ph.vacia i{display:block;font:500 8px/1.4 'Instrument Sans';letter-spacing:.12em;
+  text-transform:uppercase;color:var(--mute);font-style:normal;margin-top:3px}
+
+/* ═══ lista corrida ═══ */
+.plana{width:100%;border-collapse:collapse;font-size:13px}
+.plana thead th{position:sticky;top:0;z-index:2;background:var(--paper);
+  font:500 9.5px/1 'Instrument Sans';letter-spacing:.13em;text-transform:uppercase;
+  color:var(--mute);padding:11px 10px;border-bottom:1px solid var(--line);text-align:center}
+.plana th.l{text-align:left} .plana th.n{text-align:right}
+.plana td{padding:9px 10px;border-bottom:1px solid var(--line-2);text-align:center;vertical-align:middle}
+.plana td.l{text-align:left} .plana td.n{text-align:right;font-variant-numeric:tabular-nums}
+.plana td.c{white-space:nowrap;color:var(--mute)}
+.plana td.m{font:400 11.5px 'Instrument Sans';color:var(--mute);letter-spacing:.02em}
+.plana td.mute{color:var(--mute)}
+.plana tbody tr:hover{background:var(--paper)}
+.plana .stp{margin:0 auto}
 /* respaldo cuando una foto no carga */
 .sinfoto{position:absolute;inset:0;display:grid;place-items:center;padding:8px;text-align:center;
   background:#F1F1ED;color:var(--mute);font:600 10px/1.3 'Instrument Sans';letter-spacing:.06em;
@@ -704,8 +728,7 @@ table.remt tfoot tr.big td{font-weight:700;font-size:18px;border-top:1px solid v
   <div class="in">
     <div class="u"><div class="k">Unidades</div><div class="v" id="tu">0</div></div>
     <div class="u"><div class="k">SKUs</div><div class="v" id="ts">0</div></div>
-    <div class="u"><div class="k">Neto mayorista</div><div class="v" id="tn">0</div></div>
-    <div class="u"><div class="k">Total c/IVA</div><div class="v big" id="tt">0</div></div>
+    <div class="u"><div class="k">Total sin IVA</div><div class="v big" id="tn">0</div></div>
     <div class="note" id="tmsg"></div>
     <div class="acts">
       <button class="ghost" onclick="vaciar()">Vaciar</button>
@@ -894,8 +917,22 @@ table.remt tfoot tr.big td{font-weight:700;font-size:18px;border-top:1px solid v
 const B="fotos/";
 const BAR="fotos/";
 
+/* Orden en que se muestran las colecciones dentro de cada categoría.
+   Lo que no figure acá va después, alfabético. */
+const ORDEN_COL={
+  palos:['Ardeeno','Classics','Bloom','Neo Wood Standard'],
+  accesorios:['Guantes','Grips','Protecciones corner corto','Canilleras','Otros']
+};
+const ordenCol=(cat,a,b)=>{
+  const o=ORDEN_COL[cat]||[];
+  const ia=o.indexOf(a), ib=o.indexOf(b);
+  if(ia<0&&ib<0) return a.localeCompare(b);
+  if(ia<0) return 1; if(ib<0) return -1;
+  return ia-ib;
+};
+
 const CATS=[
- {id:'palos',nombre:'Palos',desc:'Bloom, Ardeeno, Classics y madera',
+ {id:'palos',nombre:'Palos',desc:'Ardeeno, Classics, Bloom y madera',
   img:BAR+"Ball-Ardeeno-Power_Series_97-Lowbow_Iris-1200x1800-Slide_01-optimized.jpg"},
  {id:'bolsos',nombre:'Bolsos',desc:'Fundas y mochilas',
   img:B+"ball-alter-2-large-stickbag-taupe-1.jpg"},
@@ -908,7 +945,12 @@ const CATS=[
 ];
 
 /* talles según la lista */
+/* Debajo de esta cantidad mostramos "Poca disponibilidad" en vez del número. */
+const POCO=25;
+
 const T2=['36,5"','37.5"'];
+const T375=['37.5"'];      /* modelos que no vienen en 36,5" */
+const T365=['36,5"'];      /* arquero: solo 36,5" */
 const T4=['34"','35"','36,5"','37.5"'];
 const TW=['30"','32"','34"','35"','36,5"','37,5"'];
 const TG=['XXS','XS','S','M','L'];
@@ -927,7 +969,7 @@ const CAT=[
   {n:"Ultralow Hollyhock",sku:"SBB97UL-HOL",img:B+"ball-bloom-power-97-ultralow-hollyhock-1.jpg"}]},
 
 /* ══════════ PALOS · ARDEENO 25 ══════════ */
-{id:"ar97",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Power 97",comp:"97% Carbon",talles:T2,may:269000,pvp:564900,
+{id:"ar97",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Power 97",comp:"97% Carbon",talles:T375,may:269000,pvp:564900,
  filas:[
   {n:"Lowbow Iris",sku:"SBA97LB",img:BAR+"Ball-Ardeeno-Power_Series_97-Lowbow_Iris-1200x1800-Slide_01-optimized.jpg"},
   {n:"Ultralow Lilac",sku:"SBA97UL",img:BAR+"Ball-Ardeeno-Power_Series_97-Ultralow_Liliac-1200x1800-Slide_01-optimized.jpg"},
@@ -935,20 +977,20 @@ const CAT=[
   {n:"Ultralow Groove Tephra",sku:"SBA97UG",img:BAR+"Ball-Ardeeno-Power_Series_97-Ultralow_Groove_Tephra-1200x1800-Slide_01-optimized.jpg"},
   {n:"Latebow Tyrian",sku:"SBA97LT",img:BAR+"Ball-Ardeeno-Power_Series_97-Latebow_Tyrianl-1200x1800-Slide_01-optimized.jpg"}]},
 
-{id:"ar75",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Control 75",comp:"75% Carbon",talles:T2,may:217900,pvp:457590,
+{id:"ar75",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Control 75",comp:"75% Carbon",talles:T375,may:217900,pvp:457590,
  filas:[
   {n:"Lowbow Haze",sku:"SBA75LB",img:BAR+"Ball-Ardeeno-Control_Series_75-Lowbow_Haze-1200x1800-Slide_01-optimized.jpg"},
   {n:"Probow Jade",sku:"SBA75PB",img:BAR+"Ball-Ardeeno-Control_Series_75-Probow_Jade-1200x1800-Slide_01-optimized.jpg"},
   {n:"Ultralow Mint",sku:"SBA75UL",img:BAR+"Ball-Ardeeno-Control_Series_75-Ultralow_Mint-1200x1800-Slide_01-optimized.jpg"},
   {n:"Ultralow Groove Sage",sku:"SBA75UG",img:BAR+"Ball-Ardeeno-Control_Series_75-Ultralow_Groove_Sage-1200x1800-Slide_01-optimized.jpg"}]},
 
-{id:"ar55",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Balance 55",comp:"55% Carbon",talles:T2,may:194250,pvp:407925,
+{id:"ar55",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Balance 55",comp:"55% Carbon",talles:T375,may:194250,pvp:407925,
  filas:[
   {n:"Lowbow Vinca",sku:"SBA55LB",img:BAR+"Ball-Ardeeno-Balance_Series_55-Lowbow_Vinca-1200x1800-Slide_01-optimized.jpg"},
   {n:"Probow Mauve",sku:"SBA55PB",img:BAR+"Ball-Ardeeno-Balance_Series_55-Probow_Mauve-1200x1800-Slide_01-optimized.jpg"},
   {n:"Latebow Umber",sku:"SBA55LT375",img:BAR+"Ball-Ardeeno-Balance_Series_55-Latebow_Umber-1200x1800-Slide_01-optimized.jpg"}]},
 
-{id:"arg40",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Goalie 40",comp:"40% Carbon · Arquero",talles:T2,may:180000,pvp:378000,
+{id:"arg40",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Goalie 40",comp:"40% Carbon · Arquero",talles:T365,may:180000,pvp:378000,
  filas:[
   {n:"Midbow Scarlet",sku:"SBAG40MB",img:BAR+"Ball-Ardeeno-Goalie_Series_40-Midbow_Scarlet-1200x1800-Slide_01-optimized.jpg"}]},
 
@@ -1034,32 +1076,29 @@ const CAT=[
   {n:"Teal",sku:"BPE250",img:B+"ball-alter-2-backpack-teal-1.jpg"},
   {n:"Mauve",sku:"BPM250",img:B+"ball-alter-2-backpack-mauve-1.jpg"},
   {n:"Peacock",sku:"BHBPCP",img:BAR+"ball-alter1-backpack-peacock-slide01_1200x1800_0b29e704-015d-4cb8-97e9-4cd22bed0885.png"},
-  {n:"Black",sku:"BHBPCK",img:BAR+"Ball-Web-Backpack-45.jpg"}]},
-
-{id:"bkpB",ent:"Inmediato",cat:"bolsos",col:"Backpacks",nombre:"Backpack Brown",comp:"Mochila",talles:TU,may:99500,pvp:199000,
- filas:[
-  {n:"Brown",sku:"BHBPCR",img:B+"ball-alter-2-backpack-carob-1.jpg"}]},
+  {n:"Black",sku:"BHBPCK",img:BAR+"Ball-Web-Backpack-45.jpg"},
+  {n:"Brown",sku:"BHBPCR",img:B+"ball-alter-2-backpack-carob-1.jpg",may:99500,pvp:199000}]},
 
 /* ══════════ ACCESORIOS ══════════ */
-{id:"gl_s",ent:"Inmediato",cat:"accesorios",col:"Protección",nombre:"Venture Glove V2 Short",comp:"Guante corto",talles:TG,may:34500,pvp:69000,
+{id:"gl_s",ent:"Inmediato",cat:"accesorios",col:"Guantes",nombre:"Venture Glove V2 Short",comp:"Guante corto",talles:TG,may:34500,pvp:69000,
  filas:[
   {n:"Black",sku:"VGV2SBK",img:B+"Ball-ShortGlove-Black-Front-1200x1800_221da026-2791-42ef-8727-7b6994a8a278.jpg"},
   {n:"White",sku:"VGV2SW",img:BAR+"Ball-ShortGlove-White-Front-1200x1800_4f6532c0-3ef9-4eb0-9ebb-0c418e6448d4.jpg"},
   {n:"Blue",sku:"VGV2SBL",img:B+"Ball-ShortGlove-Blue-Front-1200x1800_b4443939-1eca-4dc3-ab93-8a752ab813c2.jpg"},
   {n:"Green",sku:"VGV2SG",img:BAR+"Ball-ShortGlove-Green-Front-1200x1800_820761c5-77c0-4229-8218-fda42395248b.jpg"}]},
 
-{id:"gl_l",ent:"Inmediato",cat:"accesorios",col:"Protección",nombre:"Venture Glove V2 Long",comp:"Guante largo",talles:TG,may:37500,pvp:75000,
+{id:"gl_l",ent:"Inmediato",cat:"accesorios",col:"Guantes",nombre:"Venture Glove V2 Long",comp:"Guante largo",talles:TG,may:37500,pvp:75000,
  filas:[
   {n:"Black",sku:"VGV2LBK",img:BAR+"Ball-LongGlove-Black-Front-1200x1800_8fae5b45-cfd0-4a91-8421-763530577d5e.jpg"},
   {n:"White",sku:"VGV2LW",img:B+"Ball-LongGlove-White-Front-1200x1800_24624f4d-36fc-4099-be84-0734f42e34de.jpg"},
   {n:"Blue",sku:"VGV2LBL",img:B+"Ball-LongGlove-Blue-Front-1200x1800_f684acfe-986f-4e7a-a96b-417fb6a25242.jpg"},
   {n:"Green",sku:"VGV2LG",img:B+"Ball-LongGlove-Green-Front-1200x1800_78ccc3a1-9237-44bb-8679-4179bb60e419.jpg"}]},
 
-{id:"shin",ent:"Inmediato",cat:"accesorios",col:"Protección",nombre:"Venture Shinguards V2",comp:"Canilleras",talles:['S','M','L'],may:34950,pvp:69900,
+{id:"shin",ent:"Inmediato",cat:"accesorios",col:"Canilleras",nombre:"Venture Shinguards V2",comp:"Canilleras",talles:['S','M','L'],may:34950,pvp:69900,
  filas:[
   {n:"Venture V2",sku:"VSGV2",img:B+"Ball-Shinguards-45-1200x1800.jpg"}]},
 
-{id:"pckp",ent:"Inmediato",cat:"accesorios",col:"Protección",nombre:"Penalty Corner Knee Pads",comp:"Rodilleras corner corto",talles:['S','M','L'],may:46500,pvp:93000,
+{id:"pckp",ent:"Inmediato",cat:"accesorios",col:"Protecciones corner corto",nombre:"Penalty Corner Knee Pads",comp:"Rodilleras corner corto",talles:['S','M','L'],may:46500,pvp:93000,
  filas:[
   {n:"Knee Pads",sku:"PCKP",img:B+"Ball-PCKneepads-01_1200x1800_f6f7a168-3c17-4548-87e9-10190a913628.jpg"}]},
 
@@ -1079,28 +1118,28 @@ const CAT=[
  filas:[
   {n:"FeelGrip",sku:"FEGB",img:B+"Ball-GripsNuevos-Feel_Negro-1200x1800.jpg"}]},
 
-{id:"calf",ent:"Disponible",cat:"accesorios",col:"Essentials",nombre:"Calf Sleeves F1",comp:"Medias de compresión",talles:['JR','SR'],may:13500,pvp:27000,
+{id:"calf",ent:"Disponible",cat:"accesorios",col:"Otros",nombre:"Calf Sleeves F1",comp:"Medias de compresión",talles:['JR','SR'],may:13500,pvp:27000,
  filas:[
   {n:"Blue",sku:"CSF1-BL",img:B+"Ball-CalfSleevesBlue-Slide01_1200x1800_9a297df2-2f56-41fc-8b8e-51a4a80ce06a.jpg"},
   {n:"Green",sku:"CSF1-GR",img:B+"Ball-CalfSleevesGreen-Slide01_1200x1800_7e904f1f-a9bc-430a-abac-a6e077499a90.jpg"},
   {n:"Pink",sku:"CSF1-PK",img:B+"Ball-CalfSleevesPink-Slide01_1200x1800_98771f2c-2119-4441-a44c-0a422086e6e1.jpg"}]},
 
-{id:"hb",ent:"Disponible",cat:"accesorios",col:"Essentials",nombre:"Headbands Tripack",comp:"Vinchas x3",talles:TU,may:11500,pvp:23000,
+{id:"hb",ent:"Disponible",cat:"accesorios",col:"Otros",nombre:"Headbands Tripack",comp:"Vinchas x3",talles:TU,may:11500,pvp:23000,
  filas:[
   {n:"Black",sku:"BHB088",img:B+"BallHeadbands_NEGRO_1200x1800_bef7ad82-ae90-4053-bd95-06f614f2938a.jpg"},
   {n:"Pink/Green/Burgundy",sku:"BHB084",img:B+"BallHeadbands_COLOR_1200x1800_6251f1a8-681b-486f-9a6b-c8abd6c6334c.jpg"}]},
 
-{id:"swb",ent:"Disponible",cat:"accesorios",col:"Essentials",nombre:"Sweatband Kit",comp:"Muñequeras",talles:TU,may:13900,pvp:27800,
+{id:"swb",ent:"Disponible",cat:"accesorios",col:"Otros",nombre:"Sweatband Kit",comp:"Muñequeras",talles:TU,may:13900,pvp:27800,
  filas:[
   {n:"Brown",sku:"BSBKBR",img:BAR+"BallWebSweatbandsbeige1.jpg"},
   {n:"Black",sku:"BSBKBK",img:BAR+"BallWebSweatbandsnegro1.jpg"},
   {n:"White",sku:"BSBKWH",img:BAR+"BallWebSweatbandswhite1.jpg"}]},
 
-{id:"ptp",ent:"Disponible",cat:"accesorios",col:"Essentials",nombre:"Pro Touch Pods",comp:"Por par",talles:['BLANCO','NEGRO'],may:24500,pvp:49000,
+{id:"ptp",ent:"Disponible",cat:"accesorios",col:"Otros",nombre:"Pro Touch Pods",comp:"Por par",talles:['BLANCO','NEGRO'],may:24500,pvp:49000,
  filas:[
   {n:"Pro Touch",sku:"PTP",img:B+"Ball-Web-ProTouch-Black-1200x1800-Slide_01.jpg"}]},
 
-{id:"icb",ent:"Disponible",cat:"accesorios",col:"Essentials",nombre:"Intel Coaching Board LCD",comp:"Pizarra LCD",talles:TU,may:75000,pvp:150000,
+{id:"icb",ent:"Disponible",cat:"accesorios",col:"Otros",nombre:"Intel Coaching Board LCD",comp:"Pizarra LCD",talles:TU,may:75000,pvp:150000,
  filas:[
   {n:"Coaching Board",sku:"ICB-LCD",img:B+"ball-coachingboard-Slide02_1200x1800_1200x1800_8afa936a-8eee-4ba3-b045-d9bf19981e45.webp"}]},
 
@@ -1153,7 +1192,10 @@ const ENT={'Inmediato':['ok','Entrega inmediata'],'Disponible':['ok','Disponible
 /* stock determinístico por SKU+talle */
 const hash=s=>{let h=7;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h;};
 CAT.forEach(m=>m.filas.forEach(f=>{
-  f.pvp=m.pvp; f.may=m.may; f.mod=m.id;
+  /* un colorway puede tener su propio precio; si no, hereda el del modelo */
+  if(f.may===undefined) f.may=m.may;
+  if(f.pvp===undefined) f.pvp=m.pvp;
+  f.mod=m.id;
   f.stock={}; m.talles.forEach(t=>{const h=hash(f.sku+t); f.stock[t]= h%13===0?0 : h%42;});
 }));
 
@@ -1173,8 +1215,20 @@ PED.forEach(p=>{
   p.u=u; p.t=Math.round(neto*1.21);
 });
 
+/* El pedido a medio cargar se guarda en este navegador, por cuenta.
+   Si el mayorista cierra sesión o cierra el navegador, al volver
+   encuentra su borrador tal cual lo dejó. */
 let cart={};    // confirmado — "sku|talle" -> qty
 let draft={};   // tipeado en la grilla, todavía sin agregar
+const claveCart=()=> 'balling-b2b-cart-' + (typeof SES!=='undefined' && SES ? SES.uid : 'anon');
+function guardarCart(){ try{ localStorage.setItem(claveCart(), JSON.stringify(cart)); }catch(e){} }
+function cargarCart(){
+  try{ const c=JSON.parse(localStorage.getItem(claveCart())||'null');
+       cart = (c && typeof c==='object') ? c : {}; }catch(e){ cart={}; }
+  /* sacamos lo que ya no exista o se haya quedado sin stock */
+  for(const k in cart){ const r=find(k); if(!r || !r.f.stock[r.t]) delete cart[k]; }
+}
+function olvidarCart(){ try{ localStorage.removeItem(claveCart()); }catch(e){} }
 const $=id=>document.getElementById(id);
 const fecha=f=>{const [y,m,d]=f.split('-');return d+'/'+m+'/'+y;};
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
@@ -1647,7 +1701,9 @@ async function abrir(){
   $('who').textContent=S.n; $('sub').textContent=S.s;
   $('syncw').style.display=S.rol==='admin'?'flex':'none';
   nav(); ir(S.rol==='admin'?'entrantes':'catalogo');
-  await cargar(); ir(tab);
+  await cargar();
+  if(S.rol!=='admin') cargarCart();
+  ir(tab);
 }
 
 /* ── Vista del comprador: SOLO Catálogo, Mi pedido, Historial ── */
@@ -1676,19 +1732,26 @@ function fotoFalla(el,txt){
    bolsos, guantes, palas) y algunas apaisadas (calzado). Ajustamos el
    encuadre según cada una: las verticales llenan la ficha sin recorte
    —la proporción coincide— y las apaisadas se muestran enteras. */
+/* Las fotos se ven completas: nunca recortamos el producto. */
 function encuadre(el){
-  const r=el.naturalWidth/el.naturalHeight;
-  el.style.objectFit = r<0.85 ? 'cover' : 'contain';
+  el.style.objectFit='contain';
   el.classList.add('ok');
 }
 /* ═══ catálogo: portada de categorías ═══ */
 let catAct=null, subAct=null, fCol='', fStk=false, fEnt='';
+/* 'fichas' = cada modelo se despliega · 'lista' = todo corrido, una fila por SKU y talle */
+let vista = localStorage.getItem('balling-b2b-vista') || 'fichas';
+function cambiarVista(){
+  vista = vista==='lista' ? 'fichas' : 'lista';
+  try{ localStorage.setItem('balling-b2b-vista', vista); }catch(e){}
+  ir('catalogo');
+}
 
 /* Notas por colección (las que el representante quiere destacar) */
 const NOTA={'Bloom':'Edición limitada','Neo Wood':'Madera','Veaston':'Nueva colección',
   "Dynamo 24'":'Junior','Classics':'Línea clásica'};
 /* Una categoría se subdivide cuando tiene 3 o más colecciones */
-const colsDe=c=>[...new Set(deCat(c).map(m=>m.col))];
+const colsDe=c=>[...new Set(deCat(c).map(m=>m.col))].sort((a,b)=>ordenCol(c,a,b));
 const subdivide=c=>colsDe(c).length>=3;
 const deSub=(c,sc)=>deCat(c).filter(m=>m.col===sc);
 const enCart=m=>m.filas.reduce((a,f)=>a+m.talles.reduce((b,t)=>b+(cart[f.sku+'|'+t]||0),0),0);
@@ -1722,8 +1785,7 @@ function volverSubs(){ subAct=null; ir('catalogo'); }
 
 function vSubcategorias(){
   const c=CATS.find(x=>x.id===catAct);
-  const subs=colsDe(catAct).map(sc=>({sc,ms:deSub(catAct,sc)}))
-    .sort((a,b)=>b.ms.length-a.ms.length);
+  const subs=colsDe(catAct).map(sc=>({sc,ms:deSub(catAct,sc)}));
   const skus=0;
   $('view').innerHTML=`
   <button class="back" onclick="volverCats()">← Todas las categorías</button>
@@ -1756,11 +1818,9 @@ function vCategoria(){
   </div>
   <div class="bar">
     <input id="q" placeholder="Buscar modelo, colorway o SKU" oninput="pintar()">
-    <select onchange="fEnt=this.value;pintar()">
-      <option value="">Toda la entrega</option>
-      <option value="Inmediato" ${fEnt==='Inmediato'?'selected':''}>Entrega inmediata</option>
-      <option value="Disponible" ${fEnt==='Disponible'?'selected':''}>Disponible</option>
-    </select>
+    <button class="chip ${vista==='lista'?'on':''}" onclick="cambiarVista()"
+      title="Alternar entre fichas desplegables y una lista corrida">
+      ${vista==='lista'?'Ver por modelo':'Ver todo en una lista'}</button>
     <button class="chip ${fStk?'on':''}" onclick="fStk=!fStk;pintar()">Solo con stock</button>
     <span class="count" id="cnt"></span>
   </div>
@@ -1777,31 +1837,78 @@ function pintar(){
     return (m.nombre+' '+m.col+' '+m.filas.map(f=>f.n+' '+f.sku).join(' ')).toLowerCase().includes(q);
   });
   const cn=$('cnt'); if(cn) cn.textContent=l.length+(l.length===1?' modelo':' modelos');
-  $('lista').innerHTML = l.length? l.map(card).join('') :
+  $('lista').innerHTML = l.length? (vista==='lista'? listaPlana(l) : l.map(card).join('')) :
     `<div class="empty"><div class="t">Sin resultados</div><div class="d">Probá con otro modelo, colorway o SKU.</div>
      <button onclick="fStk=false;fEnt='';ir('catalogo')">Limpiar filtros</button></div>`;
 }
+
+/* ═══ vista de lista corrida ═══
+   Una fila por combinación de modelo, colorway y talle. Es la misma
+   información que la planilla: nombre completo, color, talle, SKU y precio. */
+function listaPlana(ms){
+  const filas=[];
+  ms.forEach(m=>m.filas.forEach(f=>m.talles.forEach(t=>{
+    filas.push({m,f,t,k:f.sku+'|'+t});
+  })));
+  if(!filas.length) return '';
+  return `<div class="panel"><table class="plana">
+  <thead><tr>
+    <th class="l">Producto</th><th class="l">Color</th><th>Talle</th>
+    <th class="l">SKU</th><th>Disp.</th>
+    <th class="n">Mayorista s/IVA</th><th class="n">PVP</th>
+    <th style="width:130px">Cantidad</th><th class="n" style="width:110px">Subtotal</th>
+  </tr></thead>
+  <tbody>${filas.map(({m,f,t,k})=>{
+    const st=f.stock[t], v=val(k), pr=promoSku(f.sku);
+    const cl=st===0?'no':st<POCO?'low':'ok';
+    const etq=st===0?'—':(st<POCO?'Poco':'✓');
+    return `<tr id="pl-${esc(k)}">
+      <td class="l"><b>${m.nombre}</b></td>
+      <td class="l">${f.n}</td>
+      <td class="c">${t}</td>
+      <td class="l m">${f.sku}</td>
+      <td class="c"><span class="stk ${cl}" title="${st===0?'Sin stock':st<POCO?'Poca disponibilidad':'Disponible'}"><i></i>${etq}</span></td>
+      <td class="n"><span class="${pr?'pr-of':''}">${money(pmay(f))}</span></td>
+      <td class="n mute">${money(f.pvp)}</td>
+      <td>
+        <div class="stp ${v?'has':''}" id="sp-${esc(k)}">
+          <button onclick="paso('${esc(k)}',-1)" ${(!st||v<=0)?'disabled':''} aria-label="Restar">−</button>
+          <input type="number" min="0" max="${st}" value="${v||''}" placeholder="0" ${st?'':'disabled'}
+            oninput="setq('${esc(k)}',this)" onkeydown="navGrilla(event,'${esc(k)}')">
+          <button onclick="paso('${esc(k)}',1)" ${(!st||v>=st)?'disabled':''} aria-label="Sumar">+</button>
+        </div>
+      </td>
+      <td class="n rmoney" id="pm-${esc(k)}">${v?money(v*pmay(f)):''}</td>
+    </tr>`}).join('')}</tbody></table></div>`;
+}
+
+/* En bolsos, accesorios, calzado y padel un modelo con varios colores no
+   muestra ninguno como "principal": se ven todos al abrirlo. */
+const SIN_PPAL=['bolsos','accesorios','calzado','padel'];
+const sinFotoPpal=m=> SIN_PPAL.includes(m.cat) && m.filas.length>1;
+
 function card(m){
   const q=enCart(m), pr=promoDe(m);
   const stk=m.filas.reduce((a,f)=>a+Object.values(f.stock).reduce((b,s)=>b+s,0),0);
   return `<div class="mod ${q?'open':''}" id="md-${m.id}">
     <div class="mh" onclick="ab('${m.id}')">
-      <button class="zoom ph" onclick="event.stopPropagation();abrirFoto('${m.filas[0].sku}')" title="Ampliar foto">
-        <img src="${m.filas[0].img}?width=220" alt="${esc(m.nombre)}" loading="lazy" onerror="fotoFalla(this,'${esc(m.nombre)}')"><span class="lupa">⤢</span></button>
+      ${sinFotoPpal(m) ? `<div class="ph vacia" title="Abrí el modelo para ver los colores">
+          <span>${m.filas.length}<i>colores</i></span></div>`
+        : `<button class="zoom ph" onclick="event.stopPropagation();abrirFoto('${m.filas[0].sku}')" title="Ampliar foto">
+        <img src="${m.filas[0].img}?width=220" alt="${esc(m.nombre)}" loading="lazy" onerror="fotoFalla(this,'${esc(m.nombre)}')"><span class="lupa">⤢</span></button>`}
       <div>
         <div class="mn">${m.nombre}</div>
         <div class="specs">
           <span class="sp k">${m.col}</span>${m.specs.map(s=>`<span class="sp">${s}</span>`).join('')}
           <span class="sp">${m.filas.length} colorway${m.filas.length>1?'s':''} · ${m.talles.length} talle${m.talles.length>1?'s':''}</span>
-          <span class="sp ${ENT[m.ent][0]==='no'?'e':'t'}">${ENT[m.ent][1]}</span>
-          ${stk===0?'<span class="sp e">Sin stock</span>':stk<25?'<span class="sp e">Stock bajo</span>':''}
+          ${stk===0?'<span class="sp e">Sin stock</span>':stk<POCO?'<span class="sp e">Poca disponibilidad</span>':''}
           ${pr?`<span class="promo sp-pr">−${pr.pct}%</span>`:''}
           ${q?`<span class="sp t">${q} u. en el pedido</span>`:''}
         </div>
       </div>
       <div class="mp">
         <div class="may ${pr?'pr':''}">${money(pmay(m.filas[0]))}</div>
-        <div class="pvp">PVP sugerido ${money(m.filas[0].pvp)}</div></div>
+        <div class="pvp">sin IVA · PVP sugerido ${money(m.filas[0].pvp)}</div></div>
       <div class="ar">▶</div>
     </div>
     <div class="mx">${pr?`<div class="promoline"><span class="promo mini">−${pr.pct}%</span>
@@ -1815,10 +1922,10 @@ function matriz(m){
   return `<table class="mtx">
   <thead><tr>
     <th class="l stick">Colorway / SKU</th>
-    <th class="n" style="width:118px">Mayorista</th>
+    <th class="n" style="width:130px">Mayorista s/IVA</th>
     ${m.talles.map(t=>`<th>${t}</th>`).join('')}
     <th style="width:64px">Unid.</th><th class="n" style="width:112px">Subtotal</th>
-    <th style="width:88px" class="noprint">Curva</th></tr></thead>
+</tr></thead>
   <tbody>${m.filas.map(f=>{
     const rt=m.talles.reduce((a,t)=>a+val(f.sku+'|'+t),0);
     const rm=m.talles.reduce((a,t)=>a+val(f.sku+'|'+t)*pmay(f),0);
@@ -1831,10 +1938,12 @@ function matriz(m){
       <td class="pr"><span class="${pr?'pr-of':''}">${money(pmay(f))}</span>
         <small>PVP ${money(f.pvp)}</small></td>
       ${m.talles.map(t=>{const k=f.sku+'|'+t,st=f.stock[t],v=val(k);
-        const cl=st===0?'no':st<10?'low':'ok';
+        /* No mostramos cantidades: solo si hay, si queda poco, o si no hay. */
+        const cl=st===0?'no':st<POCO?'low':'ok';
+        const etq=st===0?'Sin stock':st<POCO?'Poca disponibilidad':'Disponible';
         return `<td class="cel ${cl}">
-          <span class="stk ${cl}" title="${st} unidades disponibles">
-            <i></i>${st===0?'—':st}</span>
+          <span class="stk ${cl}" title="${etq}">
+            <i></i>${st===0?'—':(st<POCO?'Poco':'✓')}</span>
           <div class="stp ${v?'has':''}" id="sp-${esc(k)}">
             <button onclick="event.stopPropagation();paso('${esc(k)}',-1)" ${(!st||v<=0)?'disabled':''} aria-label="Restar">−</button>
             <input type="number" min="0" max="${st}" value="${v||''}" placeholder="0" ${st?'':'disabled'}
@@ -1845,17 +1954,13 @@ function matriz(m){
         </td>`}).join('')}
       <td class="tt" id="rt-${f.sku}">${rt||''}</td>
       <td class="n rmoney" id="rm-${f.sku}">${rm?money(rm):''}</td>
-      <td class="noprint curva">
-        <button title="Cargar 1 por talle" onclick="event.stopPropagation();curva('${f.sku}','${m.id}',1)">+1</button>
-        <button title="Cargar 2 por talle" onclick="event.stopPropagation();curva('${f.sku}','${m.id}',2)">+2</button>
-        <button title="Vaciar la fila" onclick="event.stopPropagation();curva('${f.sku}','${m.id}',0)">✕</button>
-      </td></tr>`}).join('')}
+      </tr>`}).join('')}
   </tbody>
   <tfoot><tr><td class="l stick" colspan="2">Unidades por talle</td>
     ${m.talles.map(t=>`<td id="ct-${m.id}-${t.replace(/\W/g,'')}">${tot(t)||''}</td>`).join('')}
     <td id="mt-${m.id}">${enGrilla(m)||''}</td>
     <td class="n" id="mm-${m.id}">${netoGrilla(m)?money(netoGrilla(m)):''}</td>
-    <td class="noprint"></td></tr></tfoot></table>`;
+    </tr></tfoot></table>`;
 }
 
 /* cargar una curva completa: n unidades en cada talle con stock */
@@ -1898,12 +2003,21 @@ function paso(k,d){
   let n=val(k)+d; if(n<0)n=0; if(n>f.stock[t])n=f.stock[t];
   draft[k]=n;
   const box=$('sp-'+k), inp=box.querySelector('input');
-  inp.value=n||''; refrescar(k);
+  inp.value=n||''; refrescar(k); enLista(k);
 }
 function setq(k,el){
   const {f,t}=find(k); let n=parseInt(el.value||0,10); if(isNaN(n)||n<0)n=0;
   if(n>f.stock[t]){n=f.stock[t];el.value=n;}
-  draft[k]=n; refrescar(k);
+  draft[k]=n; refrescar(k); enLista(k);
+}
+/* En la lista corrida no hay botón "Agregar": lo que se tipea entra
+   directo al pedido. */
+function enLista(k){
+  if(vista!=='lista') return;
+  const n=draft[k]||0;
+  if(n>0) cart[k]=n; else delete cart[k];
+  delete draft[k];
+  guardarCart(); nav(); ticker();
 }
 function refrescar(k){
   const {m,f,t}=find(k), n=val(k), s=f.stock[t];
@@ -1920,6 +2034,7 @@ function refrescar(k){
   const rm=m.talles.reduce((a,x)=>a+val(f.sku+'|'+x)*pmay(f),0);
   set('rm-'+f.sku, rm?money(rm):'');
   set('mm-'+m.id, netoGrilla(m)?money(netoGrilla(m)):'');
+  const pm=$('pm-'+k); if(pm) pm.textContent = n?money(n*pmay(f)):'';
   const u=enGrilla(m), ya=enCart(m);
   const ms=$('ms-'+m.id); if(ms) ms.innerHTML=`<b>${u}</b> unidades · <b>${money(netoGrilla(m))}</b> neto${ya?` · ${ya} ya en el pedido`:''}`;
   const ad=$('ad-'+m.id); if(ad) ad.disabled=!u && !ya;
@@ -1936,10 +2051,10 @@ function commit(id){
 }
 function quitarMod(id){
   const m=CAT.find(x=>x.id===id);
-  m.filas.forEach(f=>m.talles.forEach(t=>{delete cart[f.sku+'|'+t];delete draft[f.sku+'|'+t];}));
+  m.filas.forEach(f=>m.talles.forEach(t=>{delete cart[f.sku+'|'+t];delete draft[f.sku+'|'+t];})); guardarCart();
   toast(`${m.nombre} quitado del pedido`); nav(); pintar(); ticker();
 }
-function vaciar(){ if(!Object.keys(cart).length)return; cart={}; draft={}; toast('Pedido vaciado'); nav(); ir(tab); }
+function vaciar(){ if(!Object.keys(cart).length)return; cart={}; draft={}; olvidarCart(); toast('Pedido vaciado'); nav(); ir(tab); }
 
 function totales(){
   let u=0,neto=0;
@@ -1948,11 +2063,12 @@ function totales(){
   return {u,skus:Object.keys(cart).length,neto,total:Math.round(neto*(1+IVA)*100)/100};
 }
 function ticker(){
+  guardarCart();
   const t=totales(), el=$('tk');
   if(!t.u||S.rol==='admin'){el.classList.remove('on');return;}
   el.classList.add('on');
   $('tu').textContent=t.u; $('ts').textContent=t.skus;
-  $('tn').textContent=money(t.neto); $('tt').textContent=money(t.total);
+  $('tn').textContent=money(t.neto);
   $('pf').style.width='100%';
   $('tmsg').textContent='';
 }
@@ -2005,14 +2121,13 @@ function vPedido(){
     <div class="empty"><div class="t">El pedido está vacío</div>
       <div class="d">Entrá al catálogo, elegí una categoría y cargá cantidades sobre la grilla de talles.</div>
       <button onclick="volverCats()">Ir al catálogo</button>
-      <button class="alt" onclick="abrirPad()">Carga rápida por SKU</button>
     </div>`; return; }
 
   const grupos={};
   Object.keys(cart).forEach(k=>{const r=find(k);(grupos[r.m.id]=grupos[r.m.id]||{m:r.m,ls:[]}).ls.push({k,...r});});
   $('view').innerHTML=`
   <div class="title"><div><div class="eb">Borrador · ${t.skus} SKUs · ${t.u} unidades</div><h1 class="wide">Mi pedido</h1></div>
-    <div class="tacc"><button class="und2" onclick="abrirPad()">Carga rápida por SKU</button>
+    <div class="tacc">
       <button class="und2" onclick="ir('catalogo')">Seguir cargando</button></div></div>
   <div class="cartwrap">
     <div class="panel" style="padding:0">
@@ -2066,7 +2181,7 @@ function setLn(k,el){
   if(n>r.f.stock[r.t]){n=r.f.stock[r.t];el.value=n;}
   cart[k]=n; vPedido(); ticker();
 }
-function quitarLn(k){ delete cart[k]; delete draft[k]; nav(); vPedido(); ticker(); }
+function quitarLn(k){ delete cart[k]; delete draft[k]; guardarCart(); nav(); vPedido(); ticker(); }
 
 
 /* ═══ confirmación antes de enviar el pedido ═══ */
@@ -2095,7 +2210,7 @@ async function enviar(){
   PED.unshift({n:num,f:new Date().toISOString().slice(0,10),e:'pendiente',t:t.total,u:t.u,
     cli:CLI.razon, cuit:CLI.cuit, uid:SES?SES.uid:null,
     items:{...cart},notas:$('notas')?.value||''});
-  cart={}; draft={}; guardar(); toast('Pedido #'+num+' enviado'); nav(); ir('historial');
+  cart={}; draft={}; olvidarCart(); guardar(); toast('Pedido #'+num+' enviado'); nav(); ir('historial');
 }
 
 /* ═══ historial ═══ */
