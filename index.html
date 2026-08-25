@@ -299,7 +299,7 @@ td.pr .pr-of{color:var(--ember)}
 .stp input:focus{outline:none;background:#fff}
 .stp.has input{color:var(--teal-d)}
 /* stock — se lee antes que el stepper */
-.stk{display:inline-flex;align-items:center;margin-bottom:7px;white-space:nowrap;
+.stk{display:inline-flex;align-items:center;white-space:nowrap;
   font:600 9.5px/1 'Instrument Sans';letter-spacing:.07em;text-transform:uppercase;
   padding:5px 9px;border-radius:99px;background:#EDEDE8;color:var(--mute);border:1px solid var(--line)}
 .stk em{font-style:normal;font-weight:500;font-size:10.5px;opacity:.8}
@@ -309,6 +309,12 @@ td.pr .pr-of{color:var(--ember)}
 .stk.no{background:#F3F3EF;color:#A3A39B;border-color:var(--line-2)}
 .stk.no i{background:none;border:1.5px solid currentColor}
 td.cel{padding-top:11px;padding-bottom:11px}
+/* La celda se arma en dos filas: el aviso arriba —siempre ocupa el mismo
+   alto, aunque no haya nada que avisar— y el selector abajo. Así los
+   selectores quedan alineados entre sí en toda la columna. */
+td.cel .aviso{display:flex;justify-content:center;align-items:center;
+  min-height:20px;margin-bottom:7px}
+td.cel .stp{margin:0 auto}
 td.cel.no .stp{opacity:.5}
 tr.flash td{animation:flash 1.8s ease}
 @keyframes flash{0%,60%{background:#FFF3C4}100%{background:transparent}}
@@ -476,6 +482,7 @@ tfoot td.l{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:up
 .plana tbody tr:hover{background:var(--paper)}
 .plana .stp{margin:0 auto}
 .plana .stk{margin-bottom:0}
+.plana td.c .stk{display:inline-flex}
 /* respaldo cuando una foto no carga */
 .sinfoto{position:absolute;inset:0;display:grid;place-items:center;padding:8px;text-align:center;
   background:#F1F1ED;color:var(--mute);font:600 10px/1.3 'Instrument Sans';letter-spacing:.06em;
@@ -1960,8 +1967,8 @@ function matriz(m){
         /* Solo avisamos cuando no hay o cuando quedan pocas.
            Si hay stock normal no mostramos nada. */
         return `<td class="cel ${cl}">
-          ${st===0?`<span class="stk no">Sin stock</span>`
-           : st<POCO?`<span class="stk low">Últimas unidades</span>` : ''}
+          <span class="aviso">${st===0?`<span class="stk no">Sin stock</span>`
+           : st<POCO?`<span class="stk low">Últimas unidades</span>` : ''}</span>
           <div class="stp ${v?'has':''}" id="sp-${esc(k)}">
             <button onclick="event.stopPropagation();paso('${esc(k)}',-1)" ${(!st||v<=0)?'disabled':''} aria-label="Restar">−</button>
             <input type="number" min="0" max="${st}" value="${v||''}" placeholder="0" ${st?'':'disabled'}
