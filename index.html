@@ -216,6 +216,8 @@ main{padding:24px 22px 128px;width:100%;max-width:1340px;margin:0 auto;flex:1}
 .sp.t{border-color:var(--teal);color:var(--teal);background:var(--teal-l)}
 .mp{text-align:right;white-space:nowrap}
 .mp .may{font-family:'Instrument Sans';font-weight:600;font-size:17px}
+.mp .may em{font:500 10px/1 'Instrument Sans';font-style:normal;color:var(--mute);
+  letter-spacing:.08em;text-transform:uppercase;margin-left:3px;vertical-align:middle}
 .mp .pvp{font:400 11px 'Instrument Sans';color:var(--mute);margin-top:4px}
 .ar{width:22px;text-align:center;color:var(--mute);font-size:11px;transition:transform .16s}
 .mod.open .ar{transform:rotate(90deg);color:var(--ink)}
@@ -297,8 +299,8 @@ td.pr .pr-of{color:var(--ember)}
 .stp input:focus{outline:none;background:#fff}
 .stp.has input{color:var(--teal-d)}
 /* stock — se lee antes que el stepper */
-.stk{display:inline-flex;align-items:center;gap:5px;margin-bottom:7px;
-  font:700 12px/1 'Instrument Sans';letter-spacing:-.01em;
+.stk{display:inline-flex;align-items:center;margin-bottom:7px;white-space:nowrap;
+  font:600 9.5px/1 'Instrument Sans';letter-spacing:.07em;text-transform:uppercase;
   padding:5px 9px;border-radius:99px;background:#EDEDE8;color:var(--mute);border:1px solid var(--line)}
 .stk em{font-style:normal;font-weight:500;font-size:10.5px;opacity:.8}
 .stk i{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
@@ -455,6 +457,13 @@ tfoot td.l{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:up
 
 /* ═══ lista corrida ═══ */
 .plana{width:100%;border-collapse:collapse;font-size:13px}
+.plp{display:flex;align-items:center;gap:11px}
+.mini-ph{width:44px;height:44px;flex:none;border:1px solid var(--line-2);background:var(--paper);
+  padding:0;display:grid;place-items:center;overflow:hidden}
+.mini-ph img{width:100%;height:100%;object-fit:contain}
+.mini-ph:hover{border-color:var(--ink)}
+.plana thead th i,.mtx thead th i{display:block;font-style:normal;
+  font:500 8.5px/1.5 'Instrument Sans';letter-spacing:.1em;color:#B0B0B0}
 .plana thead th{position:sticky;top:0;z-index:2;background:var(--paper);
   font:500 9.5px/1 'Instrument Sans';letter-spacing:.13em;text-transform:uppercase;
   color:var(--mute);padding:11px 10px;border-bottom:1px solid var(--line);text-align:center}
@@ -466,6 +475,7 @@ tfoot td.l{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:up
 .plana td.mute{color:var(--mute)}
 .plana tbody tr:hover{background:var(--paper)}
 .plana .stp{margin:0 auto}
+.plana .stk{margin-bottom:0}
 /* respaldo cuando una foto no carga */
 .sinfoto{position:absolute;inset:0;display:grid;place-items:center;padding:8px;text-align:center;
   background:#F1F1ED;color:var(--mute);font:600 10px/1.3 'Instrument Sans';letter-spacing:.06em;
@@ -1819,7 +1829,7 @@ function vCategoria(){
   <button class="back" onclick="${haySub?'volverSubs()':'volverCats()'}">← ${haySub?c.nombre:'Todas las categorías'}</button>
   <div class="title">
     <div><div class="eb">${c.nombre}${NOTA[titulo]?' · '+NOTA[titulo]:' · '+c.desc}</div><h1 class="wide">${titulo}</h1></div>
-    <div class="sub">Precios mayoristas sin IVA, por unidad. El PVP sugerido va debajo.</div>
+    <div class="sub">El precio de compra es <b>sin IVA</b>, por unidad. Debajo va el PVP sugerido.</div>
   </div>
   <div class="bar">
     <input id="q" placeholder="Buscar modelo, colorway o SKU" oninput="pintar()">
@@ -1860,19 +1870,21 @@ function listaPlana(ms){
   <thead><tr>
     <th class="l">Producto</th><th class="l">Color</th><th>Talle</th>
     <th class="l">SKU</th><th>Disp.</th>
-    <th class="n">Mayorista s/IVA</th><th class="n">PVP</th>
+    <th class="n">Precio compra<br><i>sin IVA</i></th><th class="n">PVP sugerido</th>
     <th style="width:130px">Cantidad</th><th class="n" style="width:110px">Subtotal</th>
   </tr></thead>
   <tbody>${filas.map(({m,f,t,k})=>{
     const st=f.stock[t], v=val(k), pr=promoSku(f.sku);
-    const cl=st===0?'no':st<POCO?'low':'ok';
-    const etq=st===0?'—':(st<POCO?'Poco':'✓');
     return `<tr id="pl-${esc(k)}">
-      <td class="l"><b>${m.nombre}</b></td>
+      <td class="l"><div class="plp">
+        <button class="zoom mini-ph" onclick="abrirFoto('${f.sku}')" title="Ampliar foto">
+          <img src="${f.img}?width=120" alt="${esc(f.n)}" loading="lazy" onerror="fotoFalla(this,'')"></button>
+        <b>${m.nombre}</b></div></td>
       <td class="l">${f.n}</td>
       <td class="c">${t}</td>
       <td class="l m">${f.sku}</td>
-      <td class="c"><span class="stk ${cl}" title="${st===0?'Sin stock':st<POCO?'Poca disponibilidad':'Disponible'}"><i></i>${etq}</span></td>
+      <td class="c">${st===0?`<span class="stk no">Sin stock</span>`
+         : st<POCO?`<span class="stk low">Últimas unidades</span>` : ''}</td>
       <td class="n"><span class="${pr?'pr-of':''}">${money(pmay(f))}</span></td>
       <td class="n mute">${money(f.pvp)}</td>
       <td>
@@ -1912,8 +1924,8 @@ function card(m){
         </div>
       </div>
       <div class="mp">
-        <div class="may ${pr?'pr':''}">${money(pmay(m.filas[0]))}</div>
-        <div class="pvp">sin IVA · PVP sugerido ${money(m.filas[0].pvp)}</div></div>
+        <div class="may ${pr?'pr':''}">${money(pmay(m.filas[0]))} <em>+ IVA</em></div>
+        <div class="pvp">PVP sugerido ${money(m.filas[0].pvp)}</div></div>
       <div class="ar">▶</div>
     </div>
     <div class="mx">${pr?`<div class="promoline"><span class="promo mini">−${pr.pct}%</span>
@@ -1927,7 +1939,7 @@ function matriz(m){
   return `<table class="mtx">
   <thead><tr>
     <th class="l stick">Colorway / SKU</th>
-    <th class="n" style="width:130px">Mayorista s/IVA</th>
+    <th class="n" style="width:140px">Precio compra<br><i>sin IVA</i></th>
     ${m.talles.map(t=>`<th>${t}</th>`).join('')}
     <th style="width:64px">Unid.</th><th class="n" style="width:112px">Subtotal</th>
 </tr></thead>
@@ -1945,10 +1957,11 @@ function matriz(m){
       ${m.talles.map(t=>{const k=f.sku+'|'+t,st=f.stock[t],v=val(k);
         /* No mostramos cantidades: solo si hay, si queda poco, o si no hay. */
         const cl=st===0?'no':st<POCO?'low':'ok';
-        const etq=st===0?'Sin stock':st<POCO?'Poca disponibilidad':'Disponible';
+        /* Solo avisamos cuando no hay o cuando quedan pocas.
+           Si hay stock normal no mostramos nada. */
         return `<td class="cel ${cl}">
-          <span class="stk ${cl}" title="${etq}">
-            <i></i>${st===0?'—':(st<POCO?'Poco':'✓')}</span>
+          ${st===0?`<span class="stk no">Sin stock</span>`
+           : st<POCO?`<span class="stk low">Últimas unidades</span>` : ''}
           <div class="stp ${v?'has':''}" id="sp-${esc(k)}">
             <button onclick="event.stopPropagation();paso('${esc(k)}',-1)" ${(!st||v<=0)?'disabled':''} aria-label="Restar">−</button>
             <input type="number" min="0" max="${st}" value="${v||''}" placeholder="0" ${st?'':'disabled'}
@@ -2161,11 +2174,7 @@ function vPedido(){
           Object.keys(cart).forEach(k=>{const r=find(k);g[r.m.col]=(g[r.m.col]||0)+cart[k]*pmay(r.f);});
           return Object.entries(g).sort((a,b)=>b[1]-a[1]).map(([c,v])=>
             `<div class="row sub"><span>${c}</span><span>${money(v)}</span></div>`).join('');})()}
-        <div class="row"><span>Neto mayorista</span><span>${money(t.neto)}</span></div>
-        <div class="row"><span>IVA 21%</span><span>${money(Math.round(t.neto*IVA*100)/100)}</span></div>
-        <div class="row big"><span>Total c/IVA</span><span>${money(t.total)}</span></div>
-        ${(()=>{const pv=Object.keys(cart).reduce((a,k)=>{const r=find(k);return a+cart[k]*r.f.pvp;},0);
-          return `<div class="row rev"><span>Venta al público estimada</span><span>${money(pv)}</span></div>`;})()}
+        <div class="row big"><span>Total sin IVA</span><span>${money(t.neto)}</span></div>
         <div style="height:12px"></div>
         <textarea id="notas" rows="2" placeholder="Notas para el pedido (opcional)"></textarea>
         <button class="wfull p" onclick="pedirConfirmacion()">Enviar pedido</button>
