@@ -1221,14 +1221,19 @@ PED.forEach(p=>{
 let cart={};    // confirmado — "sku|talle" -> qty
 let draft={};   // tipeado en la grilla, todavía sin agregar
 const claveCart=()=> 'balling-b2b-cart-' + (typeof SES!=='undefined' && SES ? SES.uid : 'anon');
-function guardarCart(){ try{ localStorage.setItem(claveCart(), JSON.stringify(cart)); }catch(e){} }
+/* Hasta no haber leido el borrador guardado no escribimos nada:
+   si no, el carrito vacio del arranque pisaria lo que habia. */
+let cartListo=false;
+function guardarCart(){ if(!cartListo) return;
+  try{ localStorage.setItem(claveCart(), JSON.stringify(cart)); }catch(e){} }
 function cargarCart(){
   try{ const c=JSON.parse(localStorage.getItem(claveCart())||'null');
        cart = (c && typeof c==='object') ? c : {}; }catch(e){ cart={}; }
   /* sacamos lo que ya no exista o se haya quedado sin stock */
   for(const k in cart){ const r=find(k); if(!r || !r.f.stock[r.t]) delete cart[k]; }
+  cartListo=true;
 }
-function olvidarCart(){ try{ localStorage.removeItem(claveCart()); }catch(e){} }
+function olvidarCart(){ cartListo=true; try{ localStorage.removeItem(claveCart()); }catch(e){} }
 const $=id=>document.getElementById(id);
 const fecha=f=>{const [y,m,d]=f.split('-');return d+'/'+m+'/'+y;};
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
