@@ -466,6 +466,42 @@ tfoot td.l{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:up
 .bar.filtros select{flex:0 0 auto}
 
 
+
+/* ═══ desglose del pedido ═══ */
+tr.pr{cursor:pointer}
+tr.pr:hover,tr.pr.on{background:var(--paper)}
+tr.pr.on td{border-bottom-color:transparent}
+tr.det>td{background:var(--paper);padding:0 0 14px}
+.detbox{border:1px solid var(--line);background:var(--card);margin:0 14px}
+.deth{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:11px 14px;border-bottom:1px solid var(--line-2);
+  font:500 11px 'Instrument Sans';color:var(--mute);letter-spacing:.04em}
+.dert{display:flex;gap:7px}
+.dett{width:100%;border-collapse:collapse;font-size:12.5px}
+.dett th{font:500 9px/1 'Instrument Sans';letter-spacing:.13em;text-transform:uppercase;
+  color:var(--mute);padding:9px 12px;text-align:center;border-bottom:1px solid var(--line-2)}
+.dett th.l{text-align:left} .dett th.n{text-align:right}
+.dett td{padding:7px 12px;text-align:center;border-bottom:1px solid var(--line-2)}
+.dett td.l{text-align:left} .dett td.n{text-align:right;font-variant-numeric:tabular-nums}
+.dett td.c{color:var(--mute)} .dett td.m{color:var(--mute);font-size:11.5px}
+.dett tfoot td{font-weight:600;border-top:1px solid var(--line);border-bottom:0;background:var(--paper)}
+.detn{padding:11px 14px;border-top:1px solid var(--line-2);font-size:12.5px}
+.fdt{display:flex;align-items:center;gap:6px;font:500 10px/1 'Instrument Sans';
+  letter-spacing:.1em;text-transform:uppercase;color:var(--mute);white-space:nowrap}
+.fdt input{padding:8px 10px;border:1px solid var(--line);border-radius:8px;
+  background:var(--card);font-size:12.5px;color:var(--ink)}
+.pdfz{border:1px dashed var(--line);border-radius:10px;background:var(--paper);
+  padding:11px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pdfz.drag{border-color:var(--ink);background:#F1F1EE}
+.pdfz span{font:400 11.5px 'Instrument Sans';color:var(--mute)}
+.pdfz #pdfn{flex-basis:100%}
+.pdfok{display:flex;align-items:center;gap:9px;background:var(--card);
+  border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:12.5px}
+.pdfok em{font-style:normal;color:var(--mute);font-size:11px}
+.pdfok button{margin-left:auto;border:0;background:none;color:var(--mute);
+  font-size:15px;cursor:pointer;line-height:1;padding:0 2px}
+.pdfok button:hover{color:var(--ember)}
+
 /* ═══ cargador de fotos ═══ */
 .fz{border:1px dashed var(--line);border-radius:10px;background:var(--paper);padding:12px}
 .fz.drag{border-color:var(--ink);background:#F1F1EE}
@@ -822,6 +858,17 @@ table.remt tfoot tr.big td{font-weight:700;font-size:18px;border-top:1px solid v
         <div><label>Fecha</label><input id="fcf" type="date"></div>
         <div><label>Importe total</label><input id="fci" type="number" min="0" step="0.01"></div>
       </div>
+      <div><label>Factura en PDF <span class="opt">opcional</span></label>
+        <div class="pdfz" id="pdfz"
+          ondragover="event.preventDefault();this.classList.add('drag')"
+          ondragleave="this.classList.remove('drag')"
+          ondrop="event.preventDefault();this.classList.remove('drag');tomarPdf(event.dataTransfer.files[0])">
+          <input type="file" id="fcpdf" accept="application/pdf" hidden
+            onchange="tomarPdf(this.files[0]);this.value=''">
+          <div id="pdfn"></div>
+          <button type="button" class="und2" onclick="document.getElementById('fcpdf').click()">Elegir PDF</button>
+          <span>o arrastralo acá</span>
+        </div></div>
     </div></div>
     <div class="padf"><button class="und2" onclick="cerrarFactura()">Cancelar</button>
       <button class="und2 ok" style="margin-left:auto" onclick="guardarFactura()">Guardar factura</button></div>
@@ -2309,7 +2356,8 @@ async function enviar(){
   const t=totales(); if(!t.u) return;
   const items=Object.keys(cart).map(k=>{const{m,f,t:tl}=find(k);
     return{sku:f.sku+'-'+tl,desc:`${m.nombre} ${f.n} ${tl}`,cant:cart[k],precio:pmay(f),sub:cart[k]*pmay(f)};});
-  const num=Math.max(...PED.map(p=>p.n))+1;
+  /* si todavía no hay pedidos arrancamos en 1001 */
+  const num = PED.length ? Math.max(...PED.map(p=>p.n))+1 : 1001;
   PED.unshift({n:num,f:new Date().toISOString().slice(0,10),e:'pendiente',t:t.total,u:t.u,
     cli:CLI.razon, cuit:CLI.cuit, uid:SES?SES.uid:null,
     items:{...cart},notas:$('notas')?.value||''});
@@ -2527,7 +2575,7 @@ function confirmarRechazo(){
   cerrarRechazo(); toast('Pedido #'+p.n+' rechazado'); guardar(); guardar(); guardar(); guardar(); guardar(); refrescarAdmin();
 }
 let FAC=null;
-function abrirFactura(n){
+function abrirFactura(n){ FACPDF=null; setTimeout(pintarPdf,0);
   FAC=PED.find(x=>x.n===n); if(!FAC) return;
   const f=FAC.fac||{};
   $('fcn').value=f.nro||''; $('fcf').value=f.fecha||hoy(); $('fci').value=f.importe||FAC.t;
@@ -2535,11 +2583,58 @@ function abrirFactura(n){
   $('fc').classList.add('on'); setTimeout(()=>$('fcn').focus(),50);
 }
 function cerrarFactura(){ $('fc').classList.remove('on'); FAC=null; }
-function guardarFactura(){
+/* ── PDF de la factura ──────────────────────────────────────────
+   Cada PDF va a su propio documento de Firestore, aparte del estado del
+   portal, para que el estado no se haga pesado con el correr de los meses. */
+let FACPDF=null;
+const PDF_TOPE=3*1024*1024;
+
+function tomarPdf(file){
+  if(!file) return;
+  if(file.type!=='application/pdf'){ toast('Tiene que ser un PDF'); return; }
+  if(file.size>PDF_TOPE){ toast('El PDF no puede pasar de 3 MB'); return; }
+  const fr=new FileReader();
+  fr.onload=()=>{ FACPDF={nombre:file.name, tam:file.size, data:fr.result}; pintarPdf(); };
+  fr.onerror=()=>toast('No se pudo leer el archivo');
+  fr.readAsDataURL(file);
+}
+function pintarPdf(){
+  const c=$('pdfn'); if(!c) return;
+  c.innerHTML = FACPDF
+    ? `<div class="pdfok"><span>${esc(FACPDF.nombre)}</span>
+         <em>${(FACPDF.tam/1024).toFixed(0)} KB</em>
+         <button type="button" onclick="FACPDF=null;pintarPdf()">×</button></div>` : '';
+}
+const docPDF=n=>`https://firestore.googleapis.com/v1/projects/${encodeURIComponent(CFG.pid)}`
+  +`/databases/(default)/documents/facturas/${n}`;
+async function subirPdf(n){
+  const h=await conCabecera(); if(!h) return false;
+  try{
+    const r=await fetch(docPDF(n),{method:'PATCH',headers:{...h,'Content-Type':'application/json'},
+      body:JSON.stringify({fields:{nombre:{stringValue:FACPDF.nombre},data:{stringValue:FACPDF.data}}})});
+    return r.ok;
+  }catch(e){ return false; }
+}
+async function bajarPdf(n){
+  const h=await conCabecera(); if(!h){ toast('Sesión vencida'); return; }
+  try{
+    const r=await fetch(docPDF(n),{headers:h,cache:'no-store'});
+    if(!r.ok){ toast('No encontramos el PDF de ese pedido'); return; }
+    const f=(await r.json()).fields||{};
+    const a=document.createElement('a');
+    a.href=f.data.stringValue;
+    a.download=(f.nombre&&f.nombre.stringValue)||('factura-'+n+'.pdf');
+    a.click();
+  }catch(e){ toast('No se pudo descargar el PDF'); }
+}
+
+async function guardarFactura(){
   const nro=$('fcn').value.trim(), imp=parseFloat($('fci').value);
   if(!nro){ toast('Falta el número de factura'); $('fcn').focus(); return; }
   if(!imp||imp<=0){ toast('Falta el importe'); $('fci').focus(); return; }
-  FAC.fac={nro,fecha:$('fcf').value,importe:imp};
+  const conPdf = FACPDF ? await subirPdf(FAC.n) : false;
+  if(FACPDF && !conPdf) toast('No se pudo guardar el PDF; la factura se carga igual');
+  FAC.fac={nro,fecha:$('fcf').value,importe:imp,pdf:conPdf};
   if(FAC.e==='aceptado') FAC.e='facturado';
   const n=FAC.n; cerrarFactura();
   toast('Factura '+nro+' cargada en el pedido #'+n); guardar(); guardar(); guardar(); guardar(); guardar(); refrescarAdmin();
@@ -2693,9 +2788,81 @@ function csvRemito(n){
 }
 
 let fEst='';
+
+/* ═══ desglose del pedido, para revisarlo antes de aceptar ═══ */
+let ABIERTO=null;
+let fCli='', fDesde='', fHasta='', fBusca='', oPed='nuevos';
+function verDetalle(n){ ABIERTO = ABIERTO===n ? null : n; vEntrantes(); }
+function limpiarPed(){ fEst=fCli=fDesde=fHasta=fBusca=''; vEntrantes(); }
+/* atajos de período, para no tener que tipear las dos fechas */
+function periodo(v){
+  if(!v) return;
+  const d=new Date(), iso=x=>x.toISOString().slice(0,10);
+  const primero=(y,m)=>iso(new Date(Date.UTC(y,m,1)));
+  const ultimo =(y,m)=>iso(new Date(Date.UTC(y,m+1,0)));
+  if(v==='hoy'){ fDesde=fHasta=iso(d); }
+  else if(v==='7'||v==='30'){ const a=new Date(d); a.setDate(a.getDate()-(+v-1)); fDesde=iso(a); fHasta=iso(d); }
+  else if(v==='mes'){ fDesde=primero(d.getFullYear(),d.getMonth()); fHasta=iso(d); }
+  else if(v==='mesant'){ const y=d.getMonth()?d.getFullYear():d.getFullYear()-1;
+    const m=d.getMonth()?d.getMonth()-1:11; fDesde=primero(y,m); fHasta=ultimo(y,m); }
+  else if(v==='anio'){ fDesde=primero(d.getFullYear(),0); fHasta=iso(d); }
+  vEntrantes();
+}
+
+function detallePedido(p){
+  const ls=lineasDe(p);
+  if(!ls.length) return '<div class="mas">Este pedido no tiene líneas.</div>';
+  const g={};
+  ls.forEach(l=>{ const r=idx[l.sku]; const mod=r?r.m.nombre:l.nombre;
+    (g[mod]=g[mod]||[]).push({...l, color:r?r.f.n:''}); });
+  return `<div class="detbox">
+    <div class="deth">
+      <span>${ls.length} línea${ls.length>1?'s':''} · ${p.u} unidades</span>
+      <span class="dert">
+        <button class="mini" onclick="event.stopPropagation();verRemito(${p.n})">Ver remito</button>
+        <button class="mini" onclick="event.stopPropagation();copiarRemito(${p.n})">Copiar</button>
+        <button class="mini" onclick="event.stopPropagation();csvRemito(${p.n})">CSV</button>
+      </span>
+    </div>
+    <table class="dett"><thead><tr>
+      <th class="l">Producto</th><th class="l">Color</th><th>Talle</th><th class="l">SKU</th>
+      <th class="n">Unid.</th><th class="n">Unitario</th><th class="n">Subtotal</th>
+    </tr></thead><tbody>
+      ${Object.entries(g).map(([mod,fs])=>
+        fs.map((l,i)=>`<tr>
+          <td class="l">${i===0?`<b>${esc(mod)}</b>`:''}</td>
+          <td class="l">${esc(l.color)}</td>
+          <td class="c">${esc(l.talle)}</td>
+          <td class="l m">${esc(l.sku)}</td>
+          <td class="n">${l.cant}</td>
+          <td class="n">${money(l.unit)}</td>
+          <td class="n">${money(l.sub)}</td>
+        </tr>`).join('')).join('')}
+    </tbody><tfoot><tr>
+      <td colspan="4" class="l">Total sin IVA</td>
+      <td class="n">${p.u}</td><td></td><td class="n">${money(p.t)}</td>
+    </tr></tfoot></table>
+    ${p.notas?`<div class="detn"><b>Notas del cliente:</b> ${esc(p.notas)}</div>`:''}
+  </div>`;
+}
+
 function vEntrantes(){
   const cnt=e=>PED.filter(p=>p.e===e).length;
-  const l=fEst?PED.filter(p=>p.e===fEst):PED;
+  let l=PED;
+  if(fEst) l=l.filter(p=>p.e===fEst);
+  if(fCli) l=l.filter(p=>(p.cli||CLI.razon)===fCli);
+  if(fDesde) l=l.filter(p=>p.f>=fDesde);
+  if(fHasta) l=l.filter(p=>p.f<=fHasta);
+  if(fBusca){ const q=fBusca.toLowerCase();
+    l=l.filter(p=>(('#'+p.n)+' '+(p.cli||'')+' '+(p.cuit||'')+' '+(p.fac?p.fac.nro:'')).toLowerCase().includes(q)); }
+  const ordP={
+    nuevos:(a,b)=> (b.f||'').localeCompare(a.f||'') || b.n-a.n,
+    viejos:(a,b)=> (a.f||'').localeCompare(b.f||'') || a.n-b.n,
+    mayor: (a,b)=> b.t-a.t, menor:(a,b)=> a.t-b.t, unid:(a,b)=> b.u-a.u,
+    cliente:(a,b)=> (a.cli||'').localeCompare(b.cli||'') || b.n-a.n };
+  l=[...l].sort(ordP[oPed]||ordP.nuevos);
+  const clientes=[...new Set(PED.map(p=>p.cli||CLI.razon))].sort();
+  const totalFiltrado=l.reduce((a,p)=>a+p.t,0), unidFiltradas=l.reduce((a,p)=>a+p.u,0);
   $('view').innerHTML=`
   <div class="title"><div><div class="eb">Panel del representante</div><h1 class="wide">Pedidos</h1></div>
     <div class="sub">Aceptá o rechazá lo que entra, cargá la factura de tu sistema y cerrá el pedido.</div></div>
@@ -2706,18 +2873,45 @@ function vEntrantes(){
     <div class="kpi"><div class="k">Facturado del mes</div>
       <div class="v">${money(PED.filter(p=>p.fac).reduce((a,p)=>a+p.fac.importe,0))}</div></div>
   </div>
-  ${fEst?`<div class="filtroon">Mostrando solo <b>${EST[fEst][1]}</b>
-    <button onclick="fEst='';vEntrantes()">Ver todos</button></div>`:''}
+  <div class="bar filtros">
+    <input placeholder="Buscar por número, cliente, CUIT o factura" value="${esc(fBusca)}"
+      oninput="fBusca=this.value;vEntrantes()">
+    <select onchange="fCli=this.value;vEntrantes()">
+      <option value="">Todos los clientes</option>
+      ${clientes.map(c=>`<option value="${esc(c)}" ${fCli===c?'selected':''}>${esc(c)}</option>`).join('')}
+    </select>
+    <label class="fdt">Desde <input type="date" value="${fDesde}" onchange="fDesde=this.value;vEntrantes()"></label>
+    <label class="fdt">Hasta <input type="date" value="${fHasta}" onchange="fHasta=this.value;vEntrantes()"></label>
+    <select onchange="periodo(this.value)">
+      <option value="">Período…</option><option value="hoy">Hoy</option>
+      <option value="7">Últimos 7 días</option><option value="30">Últimos 30 días</option>
+      <option value="mes">Este mes</option><option value="mesant">Mes pasado</option>
+      <option value="anio">Este año</option>
+    </select>
+    <select onchange="oPed=this.value;vEntrantes()">
+      <option value="nuevos"  ${oPed==='nuevos' ?'selected':''}>Más nuevos primero</option>
+      <option value="viejos"  ${oPed==='viejos' ?'selected':''}>Más viejos primero</option>
+      <option value="mayor"   ${oPed==='mayor'  ?'selected':''}>Mayor monto</option>
+      <option value="menor"   ${oPed==='menor'  ?'selected':''}>Menor monto</option>
+      <option value="unid"    ${oPed==='unid'   ?'selected':''}>Más unidades</option>
+      <option value="cliente" ${oPed==='cliente'?'selected':''}>Por cliente</option>
+    </select>
+    ${(fEst||fCli||fDesde||fHasta||fBusca)?`<button class="mini" onclick="limpiarPed()">Limpiar</button>`:''}
+    <span class="count">${l.length} de ${PED.length} · ${unidFiltradas} u. · ${money(totalFiltrado)}</span>
+  </div>
   ${l.length?`<div class="panel"><table><thead><tr><th>Pedido</th><th>Cliente</th><th>Fecha</th>
     <th class="n">Unid.</th><th class="n">Total</th><th>Estado</th><th>Factura</th><th></th></tr></thead><tbody>
-    ${l.map(p=>`<tr>
-      <td><button class="lk" onclick="verRemito(${p.n})">#${p.n}</button></td>
-      <td>${esc(p.cli||CLI.razon)}</td><td class="m">${fecha(p.f)}</td>
+    ${l.map(p=>`<tr class="pr ${ABIERTO===p.n?'on':''}" onclick="verDetalle(${p.n})">
+      <td><span class="lk">#${p.n}</span></td>
+      <td>${esc(p.cli||CLI.razon)}${p.cuit?`<div class="rs">${esc(p.cuit)}</div>`:''}</td><td class="m">${fecha(p.f)}</td>
       <td class="n">${p.u}</td><td class="n" style="font-weight:600">${money(p.t)}</td>
       <td><span class="badge ${EST[p.e][0]}">${EST[p.e][1]}</span>
         ${p.e==='rechazado'&&p.motivo?`<div class="mot">${esc(p.motivo)}</div>`:''}</td>
-      <td class="m">${p.fac?`<b>${p.fac.nro}</b><div class="rs">${fecha(p.fac.fecha)}</div>`:'<span style="color:var(--mute)">—</span>'}</td>
-      <td class="acc">${accionesPedido(p,'mini')}</td></tr>`).join('')}
+      <td class="m">${p.fac?`<b>${p.fac.nro}</b><div class="rs">${fecha(p.fac.fecha)}
+        ${p.fac.pdf?`· <button class="lk" onclick="event.stopPropagation();bajarPdf(${p.n})">PDF</button>`:''}</div>`
+        :'<span style="color:var(--mute)">—</span>'}</td>
+      <td class="acc" onclick="event.stopPropagation()">${accionesPedido(p,'mini')}</td></tr>
+      ${ABIERTO===p.n?`<tr class="det"><td colspan="8">${detallePedido(p)}</td></tr>`:''}`).join('')}
   </tbody></table></div>`:
   `<div class="empty"><div class="t">No hay pedidos en ese estado</div>
    <div class="d">Cambiá el filtro de arriba para ver el resto.</div></div>`}`;
