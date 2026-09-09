@@ -461,6 +461,10 @@ tfoot td.l{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:up
 .ph.vacia i{display:block;font:500 8px/1.4 'Instrument Sans';letter-spacing:.12em;
   text-transform:uppercase;color:var(--mute);font-style:normal;margin-top:3px}
 
+.bar.filtros{flex-wrap:wrap;gap:8px}
+.bar.filtros input{min-width:230px;flex:1 1 230px}
+.bar.filtros select{flex:0 0 auto}
+
 /* ═══ lista corrida ═══ */
 .plana{width:100%;border-collapse:collapse;font-size:13px}
 .plp{display:flex;align-items:center;gap:11px}
@@ -532,6 +536,8 @@ table.padt td.n{text-align:right}
   padding:9px 13px;margin-bottom:10px;font-size:13px}
 .filtroon button{margin-left:auto;font:600 12.5px 'Instrument Sans';color:var(--teal)}
 td.acc{white-space:nowrap;text-align:right}
+.mini.no{color:var(--ember);border-color:#EED3CC}
+.mini.no:hover{background:#FDF2EE}
 .mini{padding:7px 13px;border:1px solid var(--line);border-radius:999px;background:var(--card);
   font:600 12px 'Instrument Sans';color:var(--mute);margin-left:5px}
 .mini:hover{border-color:var(--ink);color:var(--ink)}
@@ -865,19 +871,43 @@ table.remt tfoot tr.big td{font-weight:700;font-size:18px;border-top:1px solid v
   </div>
 </div>
 
+<div id="un" class="modal">
+  <div class="padbox" style="max-width:520px">
+    <div class="padh"><div><h3>Nuevo usuario</h3>
+      <p>Creás la cuenta y le pasás el email y la contraseña. Después él la puede cambiar.</p></div>
+      <button class="x" onclick="cerrarUsr()">×</button></div>
+    <div class="padb">
+      <div class="mform">
+        <div><label>Empresa</label><input id="unr" placeholder="Distribuidora Del Sur SRL"></div>
+        <div><label>Email</label><input id="une" type="email" placeholder="pedidos@empresa.com"></div>
+        <div><label>Contraseña</label><input id="unp" placeholder="mínimo 6 caracteres"></div>
+        <div><label>CUIT <span class="opt">opcional</span></label><input id="unc" placeholder="30-71204558-9"></div>
+        <div><label>Rol</label><select id="unrol">
+          <option value="may">Mayorista · carga pedidos</option>
+          <option value="admin">Representante · ve el panel</option>
+        </select></div>
+      </div>
+      <div id="unerr" style="color:var(--ember);font:400 12px/1.6 'Instrument Sans';min-height:18px;margin-top:8px"></div>
+    </div>
+    <div class="padf"><button class="und2" onclick="cerrarUsr()">Cancelar</button>
+      <button class="add" id="unok" onclick="crearUsuario()">Crear cuenta</button></div>
+  </div>
+</div>
+
 <div id="stk" class="modal">
   <div class="padbox" style="max-width:760px">
     <div class="padh"><div><h3>Carga masiva de stock</h3>
-      <p>Descargá la planilla, editá la columna Stock en Excel y pegá todo acá. También podés escribir a mano.</p></div>
+      <p>Dos columnas: <b>SKU</b> y <b>UNIDADES</b>. Descargá la planilla, editá las unidades en Excel y pegá todo acá.</p></div>
       <button class="x" onclick="cerrarStk()">×</button></div>
     <div class="padb">
       <select id="stkm">
         <option value="set">Reemplazar el stock actual por estos valores</option>
         <option value="sumar">Sumar estas cantidades al stock actual (reposición)</option>
       </select>
-      <textarea id="stkt" placeholder="SBA97LB;36,5&quot;;24&#10;SBA97LB;37.5&quot;;18&#10;VGV2SBK;M;40&#10;LST250;12"></textarea>
-      <div class="padej">Formato: <b>SKU · talle · cantidad</b>. Acepta punto y coma, coma, tabulación o espacios,
-        y descarta la fila de encabezado. Si el producto tiene un solo talle podés omitirlo.</div>
+      <textarea id="stkt" placeholder="SBA97LB;24&#10;LST250;12&#10;VGV2SBK-M;40"></textarea>
+      <div class="padej">Acepta punto y coma, coma, tabulación o espacios, y descarta el encabezado.
+        Si un producto viene en varios talles, el código lleva el talle detrás —por ejemplo
+        <b>VGV2SBK-M</b>—; la planilla que descargás ya trae los códigos armados.</div>
       <div id="stkr"></div>
     </div>
     <div class="padf"><button class="und2" onclick="bajarStock()">Descargar planilla</button>
@@ -1217,6 +1247,27 @@ CAT.forEach(m=>m.filas.forEach(f=>{
 }));
 
 const idx={}; CAT.forEach(m=>m.filas.forEach(f=>idx[f.sku]={m,f}));
+
+/* Código de una línea de stock. Cuando el modelo tiene un solo talle
+   alcanza con el SKU; si tiene varios, se le agrega el talle detrás.
+   Así la planilla de stock necesita apenas dos columnas. */
+const limpiaT=s=>String(s).replace(/[",.\s]/g,'').toUpperCase();
+const codigoDe=(m,f,t)=> m.talles.length===1 ? f.sku : f.sku+'-'+limpiaT(t);
+function buscarCodigo(cod){
+  const c=String(cod).trim().toUpperCase();
+  const r=idx[c];
+  if(r && r.m.talles.length===1) return {...r, t:r.m.talles[0]};
+  const i=c.lastIndexOf('-');
+  if(i>0){
+    const base=idx[c.slice(0,i)];
+    if(base){
+      const t=base.m.talles.find(x=>limpiaT(x)===c.slice(i+1));
+      if(t) return {...base, t};
+    }
+  }
+  if(r && r.m.talles.length>1) return {...r, t:null, ambiguo:r.m.talles};
+  return null;
+}
 const idx0=idx;
 const CLI={id:'c1',razon:'Distribuidora Del Sur SRL',cuit:'30-71204558-9'};
 let PED=[
@@ -2274,7 +2325,7 @@ function duplicar(n){
 
 
 /* ═══ usuarios (panel del representante) ═══ */
-let USUARIOS=[];
+let USUARIOS=[], fUsr='', fUsrRol='', oUsr='empresa';
 async function traerUsuarios(){
   const h=await conCabecera(); if(!h) return [];
   try{
@@ -2292,9 +2343,72 @@ async function traerUsuarios(){
     }).sort((a,b)=>(a.rol===b.rol?0:a.rol==='admin'?-1:1)||a.razon.localeCompare(b.razon));
   }catch(e){ return []; }
 }
+
+/* ═══ alta manual de usuarios y blanqueo de contraseña ═══
+   Crear una cuenta desde acá arranca una sesión con ese usuario para poder
+   escribir su ficha; guardamos la sesión del representante antes y la
+   restauramos al terminar, así el panel no se cierra. */
+function abrirUsr(){
+  ['unr','une','unp','unc'].forEach(id=>$(id).value='');
+  $('unrol').value='may'; $('unerr').textContent='';
+  $('un').classList.add('on'); setTimeout(()=>$('unr').focus(),50);
+}
+function cerrarUsr(){ $('un').classList.remove('on'); }
+
+async function crearUsuario(){
+  const razon=$('unr').value.trim(), mail=$('une').value.trim();
+  const pass=$('unp').value, cuit=$('unc').value.trim(), rol=$('unrol').value;
+  const err=$('unerr'); err.textContent='';
+  if(!razon){ err.textContent='Poné el nombre de la empresa.'; return; }
+  if(!mail){ err.textContent='Poné el email con el que va a entrar.'; return; }
+  if(pass.length<6){ err.textContent=ERR.WEAK_PASSWORD; return; }
+  const btn=$('unok'); btn.disabled=true; btn.textContent='Creando…';
+  const mia={...SES};                       // sesión del representante
+  try{
+    const r=await fetch(authURL('signUp'),{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:mail,password:pass,returnSecureToken:true})});
+    const j=await r.json();
+    if(!r.ok) throw {msg:traducir(j.error&&j.error.message)};
+    /* la ficha se escribe con el token del usuario recién creado */
+    const f=await fetch(docFS('usuarios',j.localId),{method:'PATCH',
+      headers:{'Authorization':'Bearer '+j.idToken,'Content-Type':'application/json'},
+      body:JSON.stringify({fields:{rol:{stringValue:rol},email:{stringValue:mail},
+        razon:{stringValue:razon},cuit:{stringValue:cuit}}})});
+    if(!f.ok) throw {msg:'La cuenta se creó pero no se pudo guardar su ficha.'};
+    SES=mia; try{ localStorage.setItem(LS+'-ses',JSON.stringify(SES)); }catch(e){}
+    cerrarUsr(); toast('Cuenta creada para '+razon);
+    vUsuarios();
+  }catch(x){
+    SES=mia; try{ localStorage.setItem(LS+'-ses',JSON.stringify(SES)); }catch(e){}
+    err.textContent = x&&x.msg ? x.msg : 'No se pudo crear la cuenta.';
+  }finally{ btn.disabled=false; btn.textContent='Crear cuenta'; }
+}
+
+/* Firebase no deja fijarle una contraseña nueva a otro usuario desde el
+   navegador: lo que sí podemos es mandarle el mail para que la rehaga. */
+async function blanquear(uid){
+  const u=USUARIOS.find(x=>x.uid===uid); if(!u) return;
+  if(!confirm('Le mandamos a '+u.email+' un mail para que elija una contraseña nueva.\n\n¿Seguimos?')) return;
+  try{
+    const r=await fetch(authURL('sendOobCode'),{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({requestType:'PASSWORD_RESET',email:u.email})});
+    const j=await r.json();
+    toast(r.ok ? 'Mail enviado a '+u.email : traducir(j.error&&j.error.message));
+  }catch(e){ toast('No se pudo enviar el mail'); }
+}
+
+async function borrarUsuario(uid){
+  const u=USUARIOS.find(x=>x.uid===uid); if(!u) return;
+  if(!confirm('Se le quita el acceso a '+(u.razon||u.email)+'.\n\nSus pedidos quedan en el historial. ¿Seguimos?')) return;
+  const h=await conCabecera(); if(!h){ toast('Sesión vencida'); return; }
+  const r=await fetch(docFS('usuarios',uid),{method:'DELETE',headers:h});
+  toast(r.ok?'Acceso dado de baja':'No se pudo dar de baja');
+  if(r.ok) vUsuarios();
+}
+
 async function vUsuarios(){
   $('view').innerHTML=`<div class="title"><div><div class="eb">Accesos</div><h1 class="wide">Usuarios</h1></div>
-    <div class="sub">Cada mayorista se crea su cuenta desde la pantalla de acceso. Acá les cambiás el rol.</div></div>
+    <div class="sub">Cada mayorista se crea su cuenta desde la pantalla de acceso, o se la creás vos acá.</div></div>
     <div class="panel"><div class="mas">Cargando…</div></div>`;
   USUARIOS=await traerUsuarios();
   const yo=SES?SES.uid:'';
@@ -2305,17 +2419,47 @@ async function vUsuarios(){
     <div class="kpi"><div class="k">Mayoristas</div><div class="v">${USUARIOS.filter(u=>u.rol!=='admin').length}</div></div>
     <div class="kpi"><div class="k">Con acceso al panel</div><div class="v t">${USUARIOS.filter(u=>u.rol==='admin').length}</div></div>
   </div>
-  ${USUARIOS.length?`<div class="panel"><table><thead><tr><th>Empresa</th><th>Email</th><th>CUIT</th>
-    <th>Rol</th><th></th></tr></thead><tbody>
-    ${USUARIOS.map(u=>`<tr>
-      <td style="font-weight:600">${esc(u.razon||'—')}${u.uid===yo?'<span class="nvo">vos</span>':''}</td>
-      <td class="m">${esc(u.email)}</td><td class="m">${esc(u.cuit||'—')}</td>
-      <td><span class="badge ${u.rol==='admin'?'t':''}">${u.rol==='admin'?'Representante':'Mayorista'}</span></td>
-      <td class="acc">${u.uid===yo?'':
-        `<button class="mini" onclick="cambiarRol('${u.uid}','${u.rol==='admin'?'may':'admin'}')">
-          ${u.rol==='admin'?'Quitar panel':'Dar acceso al panel'}</button>`}</td></tr>`).join('')}
-  </tbody></table></div>`:
-  `<div class="empty"><div class="t">Todavía no hay otras cuentas</div>
+  ${(()=>{
+    const q=fUsr.toLowerCase();
+    let l=USUARIOS.filter(u=>!q||((u.razon||'')+' '+u.email+' '+(u.cuit||'')).toLowerCase().includes(q));
+    if(fUsrRol) l=l.filter(u=>u.rol===fUsrRol);
+    const ord={empresa:(a,b)=>(a.razon||'').localeCompare(b.razon||''),
+               email:(a,b)=>a.email.localeCompare(b.email),
+               rol:(a,b)=>(a.rol===b.rol?0:a.rol==='admin'?-1:1)};
+    l=[...l].sort(ord[oUsr]||ord.empresa);
+    return `<div class="bar filtros">
+      <input placeholder="Buscar por empresa, email o CUIT" value="${esc(fUsr)}"
+        oninput="fUsr=this.value;vUsuarios()">
+      <select onchange="fUsrRol=this.value;vUsuarios()">
+        <option value="">Todos los roles</option>
+        <option value="admin" ${fUsrRol==='admin'?'selected':''}>Representantes</option>
+        <option value="may"   ${fUsrRol==='may'  ?'selected':''}>Mayoristas</option>
+      </select>
+      <select onchange="oUsr=this.value;vUsuarios()">
+        <option value="empresa" ${oUsr==='empresa'?'selected':''}>Ordenar por empresa</option>
+        <option value="email"   ${oUsr==='email'  ?'selected':''}>Ordenar por email</option>
+        <option value="rol"     ${oUsr==='rol'    ?'selected':''}>Ordenar por rol</option>
+      </select>
+      <span class="count">${l.length} de ${USUARIOS.length} cuentas</span>
+    </div>
+    ${l.length?`<div class="panel"><table><thead><tr><th>Empresa</th><th>Email</th><th>CUIT</th>
+      <th>Rol</th><th></th></tr></thead><tbody>
+      ${l.map(u=>`<tr>
+        <td style="font-weight:600">${esc(u.razon||'—')}${u.uid===yo?'<span class="nvo">vos</span>':''}</td>
+        <td class="m">${esc(u.email)}</td><td class="m">${esc(u.cuit||'—')}</td>
+        <td><span class="badge ${u.rol==='admin'?'t':''}">${u.rol==='admin'?'Representante':'Mayorista'}</span></td>
+        <td class="acc">
+          <button class="mini" onclick="blanquear('${u.uid}')" title="Le manda un mail para rehacer la contraseña">Blanquear clave</button>
+          ${u.uid===yo?'':`
+            <button class="mini" onclick="cambiarRol('${u.uid}','${u.rol==='admin'?'may':'admin'}')">
+              ${u.rol==='admin'?'Quitar panel':'Dar acceso al panel'}</button>
+            <button class="mini no" onclick="borrarUsuario('${u.uid}')">Dar de baja</button>`}
+        </td></tr>`).join('')}
+    </tbody></table></div>`:
+    `<div class="empty"><div class="t">Ninguna cuenta coincide</div>
+     <div class="d">Probá con otro texto o limpiá los filtros.</div></div>`}`;
+  })()}
+  ${USUARIOS.length?'':`<div class="empty"><div class="t">Todavía no hay otras cuentas</div>
    <div class="d">Pasales el link a tus mayoristas: se registran solos desde la pantalla de acceso.</div></div>`}`;
 }
 async function cambiarRol(uid,rol){
@@ -2546,14 +2690,36 @@ function vEntrantes(){
   `<div class="empty"><div class="t">No hay pedidos en ese estado</div>
    <div class="d">Cambiá el filtro de arriba para ver el resto.</div></div>`}`;
 }
-let fStkPanel='';
+let fStkPanel='', fStkCat='', fStkCol='', fStkEst='', oStk='modelo';
+function limpiarStk(){ fStkPanel=fStkCat=fStkCol=fStkEst=''; vStock(); }
 function vStock(){
   const rows=[];
   CAT.forEach(m=>m.filas.forEach(f=>m.talles.forEach(t=>
-    rows.push({m,f,t,s:f.stock[t]}))));
+    rows.push({m,f,t,s:f.stock[t],cod:codigoDe(m,f,t)}))));
+
+  /* ── filtros ── */
   const q=fStkPanel.toLowerCase();
-  const l=q?rows.filter(r=>(r.f.sku+' '+r.m.nombre+' '+r.f.n).toLowerCase().includes(q)):rows;
-  const cero=rows.filter(r=>r.s===0).length, bajo=rows.filter(r=>r.s>0&&r.s<10).length;
+  let l=rows;
+  if(q) l=l.filter(r=>(r.cod+' '+r.f.sku+' '+r.m.nombre+' '+r.f.n+' '+r.t).toLowerCase().includes(q));
+  if(fStkCat) l=l.filter(r=>r.m.cat===fStkCat);
+  if(fStkCol) l=l.filter(r=>r.m.col===fStkCol);
+  if(fStkEst==='cero')  l=l.filter(r=>r.s===0);
+  if(fStkEst==='bajo')  l=l.filter(r=>r.s>0&&r.s<POCO);
+  if(fStkEst==='hay')   l=l.filter(r=>r.s>=POCO);
+
+  /* ── ordenado ── */
+  const ord={
+    modelo:(a,b)=> a.m.nombre.localeCompare(b.m.nombre)||a.f.n.localeCompare(b.f.n)||a.t.localeCompare(b.t),
+    sku:   (a,b)=> a.cod.localeCompare(b.cod),
+    menos: (a,b)=> a.s-b.s || a.m.nombre.localeCompare(b.m.nombre),
+    mas:   (a,b)=> b.s-a.s || a.m.nombre.localeCompare(b.m.nombre),
+    precio:(a,b)=> b.f.may-a.f.may
+  };
+  l=[...l].sort(ord[oStk]||ord.modelo);
+
+  const cero=rows.filter(r=>r.s===0).length, bajo=rows.filter(r=>r.s>0&&r.s<POCO).length;
+  const cols=fStkCat?[...new Set(CAT.filter(m=>m.cat===fStkCat).map(m=>m.col))].sort()
+                    :[...new Set(CAT.map(m=>m.col))].sort();
   $('view').innerHTML=`
   <div class="title"><div><div class="eb">Inventario</div><h1 class="wide">Stock</h1></div>
     <div class="tacc">
@@ -2565,11 +2731,33 @@ function vStock(){
     <div class="kpi"><div class="k">SKUs · talle</div><div class="v">${rows.length}</div></div>
     <div class="kpi"><div class="k">Unidades totales</div><div class="v">${rows.reduce((a,r)=>a+r.s,0).toLocaleString('es-AR')}</div></div>
     <div class="kpi"><div class="k">Sin stock</div><div class="v ${cero?'e':''}">${cero}</div></div>
-    <div class="kpi"><div class="k">Stock bajo</div><div class="v ${bajo?'e':''}">${bajo}</div></div>
+    <div class="kpi"><div class="k">Poca disponibilidad</div><div class="v ${bajo?'e':''}">${bajo}</div></div>
   </div>
-  <div class="bar">
-    <input placeholder="Filtrar por SKU, modelo o colorway" value="${esc(fStkPanel)}"
+  <div class="bar filtros">
+    <input placeholder="Buscar por SKU, modelo, colorway o talle" value="${esc(fStkPanel)}"
       oninput="fStkPanel=this.value;vStock()">
+    <select onchange="fStkCat=this.value;fStkCol='';vStock()">
+      <option value="">Todas las categorías</option>
+      ${CATS.map(c=>`<option value="${c.id}" ${fStkCat===c.id?'selected':''}>${c.nombre}</option>`).join('')}
+    </select>
+    <select onchange="fStkCol=this.value;vStock()">
+      <option value="">Todas las colecciones</option>
+      ${cols.map(c=>`<option value="${esc(c)}" ${fStkCol===c?'selected':''}>${esc(c)}</option>`).join('')}
+    </select>
+    <select onchange="fStkEst=this.value;vStock()">
+      <option value="">Cualquier estado</option>
+      <option value="cero" ${fStkEst==='cero'?'selected':''}>Sin stock</option>
+      <option value="bajo" ${fStkEst==='bajo'?'selected':''}>Poca disponibilidad</option>
+      <option value="hay"  ${fStkEst==='hay' ?'selected':''}>Con stock</option>
+    </select>
+    <select onchange="oStk=this.value;vStock()">
+      <option value="modelo" ${oStk==='modelo'?'selected':''}>Ordenar por modelo</option>
+      <option value="sku"    ${oStk==='sku'   ?'selected':''}>Ordenar por SKU</option>
+      <option value="menos"  ${oStk==='menos' ?'selected':''}>Menos stock primero</option>
+      <option value="mas"    ${oStk==='mas'   ?'selected':''}>Más stock primero</option>
+      <option value="precio" ${oStk==='precio'?'selected':''}>Mayor precio primero</option>
+    </select>
+    ${(fStkPanel||fStkCat||fStkCol||fStkEst)?`<button class="mini" onclick="limpiarStk()">Limpiar</button>`:''}
     <span class="count">${l.length} de ${rows.length} líneas</span>
   </div>
   <div class="panel" style="max-height:62vh;overflow:auto">
@@ -2577,9 +2765,9 @@ function vStock(){
       <th class="n">Stock</th><th style="width:210px">Ajustar</th>
       <th class="n">Mayorista</th></tr></thead><tbody>
       ${(STKROWS=l.slice(0,400)).map((r,i)=>`<tr id="sr-${i}">
-        <td class="m" style="font-weight:600">${r.f.sku}${r.m.nuevo?'<span class="nvo">nuevo</span>':''}</td><td>${r.m.nombre}</td>
+        <td class="m" style="font-weight:600">${r.cod}${r.m.nuevo?'<span class="nvo">nuevo</span>':''}</td><td>${r.m.nombre}</td>
         <td>${r.f.n}</td><td class="m">${r.t}</td>
-        <td class="n"><span class="stk ${r.s===0?'no':r.s<10?'low':'ok'}" id="sb-${i}"><i></i>${r.s===0?'—':r.s}</span></td>
+        <td class="n"><span class="stk ${r.s===0?'no':r.s<POCO?'low':'ok'}" id="sb-${i}">${r.s===0?'—':r.s}</span></td>
         <td>
           <div class="edt">
             <div class="stp">
@@ -2636,15 +2824,16 @@ function fijar(i,el,forzar,tipeando){
 
 /* descargar la planilla con el stock actual, para editar en Excel y volver a pegar */
 function bajarStock(){
-  const rows=[['SKU','Talle','Stock','Modelo','Colorway']];
+  /* Dos columnas y nada más: código y unidades. */
+  const rows=[['SKU','UNIDADES']];
   CAT.forEach(m=>m.filas.forEach(f=>m.talles.forEach(t=>
-    rows.push([f.sku,t,f.stock[t],m.nombre,f.n]))));
+    rows.push([codigoDe(m,f,t), f.stock[t]]))));
   const q=v=>`"${String(v).replace(/"/g,'""')}"`;
   const csv='\ufeff'+rows.map(r=>r.map(q).join(';')).join('\r\n');
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
   a.download='stock-balling-'+hoy()+'.csv'; a.click(); URL.revokeObjectURL(a.href);
-  toast('Planilla descargada · editá la columna Stock y volvé a pegarla');
+  toast('Planilla descargada · editá la columna UNIDADES y volvé a pegarla');
 }
 
 
@@ -2807,18 +2996,17 @@ function validarStk(){
     L=L.replace(/^"|"$/g,'');
     const p=L.split(/[;,\t]+|\s{2,}|\s+/).map(x=>x.replace(/^"|"$/g,'')).filter(Boolean);
     if(/^sku$/i.test(p[0])) return;                    // encabezado de la planilla
-    if(p.length<2){ err.push([L,'formato incompleto']); return; }
-    const sku=p[0].toUpperCase(), r=idx[sku];
-    if(!r){ err.push([L,'SKU inexistente']); return; }
+    if(p.length<2){ err.push([L,'faltan datos: se esperan SKU y unidades']); return; }
     const cant=parseInt(p[p.length-1],10);
-    if(isNaN(cant)||cant<0){ err.push([L,'cantidad inválida']); return; }
-    let talle = p.length>2 ? p.slice(1,-1).join(' ') : (r.m.talles.length===1?r.m.talles[0]:null);
-    if(!talle){ err.push([L,'falta el talle ('+r.m.talles.join(' / ')+')']); return; }
-    const real=r.m.talles.find(t=>t.replace(/[",.\s]/g,'').toLowerCase()===String(talle).replace(/[",.\s]/g,'').toLowerCase());
-    if(!real){ err.push([L,'talle inválido ('+r.m.talles.join(' / ')+')']); return; }
-    const antes=r.f.stock[real];
+    if(isNaN(cant)||cant<0){ err.push([L,'las unidades tienen que ser un número']); return; }
+    /* todo lo que va antes del número es el código */
+    const cod=p.slice(0,-1).join('-');
+    const r=buscarCodigo(cod);
+    if(!r){ err.push([L,'no existe el SKU '+cod]); return; }
+    if(!r.t){ err.push([L,'ese SKU tiene varios talles: usá '+r.ambiguo.map(x=>cod+'-'+limpiaT(x)).join(' o ')]); return; }
+    const antes=r.f.stock[r.t];
     const desp = modo==='sumar' ? antes+cant : cant;
-    ok.push({sku,talle:real,nombre:r.m.nombre+' '+r.f.n,antes,desp});
+    ok.push({sku:r.f.sku,talle:r.t,nombre:r.m.nombre+' '+r.f.n,antes,desp});
   });
   STKPREV={ok,modo};
   $('stkr').innerHTML=`
