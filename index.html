@@ -2413,7 +2413,8 @@ async function vUsuarios(){
   USUARIOS=await traerUsuarios();
   const yo=SES?SES.uid:'';
   $('view').innerHTML=`<div class="title"><div><div class="eb">Accesos</div><h1 class="wide">Usuarios</h1></div>
-    <div class="sub">Cada mayorista se crea su cuenta desde la pantalla de acceso. Acá les cambiás el rol.</div></div>
+    <div class="sub">Cada mayorista se crea su cuenta desde la pantalla de acceso. Acá les cambiás el rol, les creás la cuenta o les blanqueás la clave.</div>
+    <div class="tacc"><button class="und2 ok" onclick="abrirUsr()">+ Nuevo usuario</button></div></div>
   <div class="kpis">
     <div class="kpi"><div class="k">Cuentas</div><div class="v">${USUARIOS.length}</div></div>
     <div class="kpi"><div class="k">Mayoristas</div><div class="v">${USUARIOS.filter(u=>u.rol!=='admin').length}</div></div>
