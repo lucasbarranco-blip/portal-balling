@@ -465,6 +465,29 @@ tfoot td.l{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:up
 .bar.filtros input{min-width:230px;flex:1 1 230px}
 .bar.filtros select{flex:0 0 auto}
 
+
+/* ═══ cargador de fotos ═══ */
+.fz{border:1px dashed var(--line);border-radius:10px;background:var(--paper);padding:12px}
+.fz.drag{border-color:var(--ink);background:#F1F1EE}
+.fzt{display:flex;flex-wrap:wrap;gap:8px}
+.fzt:not(:empty){margin-bottom:11px}
+.fth{position:relative;width:74px;height:74px;border:1px solid var(--line);
+  background:#fff;border-radius:8px;overflow:hidden;cursor:grab}
+.fth img{width:100%;height:100%;object-fit:contain}
+.fth.ppal{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.fth b{position:absolute;left:0;right:0;bottom:0;background:var(--ink-2);color:#F9F9F9;
+  font:600 8px/1 'Instrument Sans';letter-spacing:.09em;text-transform:uppercase;
+  text-align:center;padding:4px 0}
+.fth .fx,.fth .fp{position:absolute;top:3px;width:18px;height:18px;border-radius:50%;
+  border:0;background:rgba(255,255,255,.94);color:var(--ink);font-size:12px;line-height:1;
+  display:grid;place-items:center;cursor:pointer;padding:0;opacity:0;transition:opacity .12s}
+.fth .fx{right:3px} .fth .fp{left:3px;font-size:10px}
+.fth:hover .fx,.fth:hover .fp{opacity:1}
+.fth .fx:hover{background:var(--ember);color:#fff}
+.fth .fp:hover{background:var(--ink);color:#fff}
+.fzc{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+.fzc span{font:400 11.5px 'Instrument Sans';color:var(--mute)}
+
 /* ═══ lista corrida ═══ */
 .plana{width:100%;border-collapse:collapse;font-size:13px}
 .plp{display:flex;align-items:center;gap:11px}
@@ -1251,6 +1274,11 @@ const idx={}; CAT.forEach(m=>m.filas.forEach(f=>idx[f.sku]={m,f}));
 /* Código de una línea de stock. Cuando el modelo tiene un solo talle
    alcanza con el SKU; si tiene varios, se le agrega el talle detrás.
    Así la planilla de stock necesita apenas dos columnas. */
+/* El CDN de Balling acepta ?width= para servir la foto más chica.
+   Las fotos cargadas desde el disco ya vienen comprimidas y son data URLs:
+   ahí el parámetro rompería la imagen, así que se deja tal cual. */
+const px=(src,w)=> !src ? '' : (String(src).startsWith('data:') ? src : src+'?width='+w);
+
 const limpiaT=s=>String(s).replace(/[",.\s]/g,'').toUpperCase();
 const codigoDe=(m,f,t)=> m.talles.length===1 ? f.sku : f.sku+'-'+limpiaT(t);
 function buscarCodigo(cod){
@@ -1350,7 +1378,10 @@ function galeria(u){
 let LB={fotos:[],i:0,tit:''};
 function abrirFoto(sku){
   const r=idx[sku]; if(!r) return;
-  LB={fotos:galeria(r.f.img), i:0, tit:r.m.nombre+' · '+r.f.n, sku};
+  /* si el producto tiene fotos cargadas a mano usamos esas; si no,
+     probamos las variantes del CDN de Balling */
+  LB={fotos:(r.f.imgs&&r.f.imgs.length)?r.f.imgs.slice():galeria(r.f.img),
+      i:0, tit:r.m.nombre+' · '+r.f.n, sku};
   $('lb').classList.add('on'); pintarLB();
   document.body.style.overflow='hidden';
 }
@@ -1367,11 +1398,11 @@ function pintarLB(){
   const f=LB.fotos, r=idx[LB.sku];
   $('lbt').textContent=LB.tit;
   $('lbs').textContent=r? r.f.sku : '';
-  $('lbi').innerHTML=f.length?`<img src="${f[LB.i]}?width=1600" alt="${esc(LB.tit)}">`:'';
+  $('lbi').innerHTML=f.length?`<img src="${px(f[LB.i],1600)}" alt="${esc(LB.tit)}">`:'';
   $('lbn').style.display=f.length>1?'flex':'none';
   $('lbc').textContent=f.length>1?(LB.i+1)+' / '+f.length:'';
   $('lbth').innerHTML=f.map((u,i)=>
-    `<img src="${u}?width=160" class="${i===LB.i?'on':''}" alt=""
+    `<img src="${px(u,160)}" class="${i===LB.i?'on':''}" alt=""
       onclick="verFoto(${i})" onerror="fotoRota(this,${JSON.stringify(u).replace(/"/g,'&quot;')})">`).join('');
 }
 document.addEventListener('keydown',e=>{
@@ -1427,7 +1458,7 @@ function qsBuscar(){
   box.innerHTML=QSr.length? QSr.map((r,i)=>{
     const st=Object.values(r.f.stock).reduce((a,b)=>a+b,0), p=promoDe(r.m);
     return `<button class="qsi" onmousedown="event.preventDefault();irASku('${r.sku}')" data-i="${i}">
-      <img src="${r.f.img}?width=80" alt="" loading="lazy">
+      <img src="${px(r.f.img,80)}" alt="" loading="lazy">
       <span class="qn"><b>${r.sku}</b><em>${r.m.nombre} · ${r.f.n}</em></span>
       ${p?`<span class="promo mini">−${p.pct}%</span>`:''}
       <span class="qst ${st===0?'no':st<20?'low':'ok'}">${st} u.</span></button>`}).join('')
@@ -1497,7 +1528,7 @@ function snapshot(){
   CAT.forEach(m=>{
     if(m.nuevo) extra.push({id:m.id,ent:m.ent,cat:m.cat,col:m.col,nombre:m.nombre,comp:m.comp,
       talles:m.talles,may:m.may,pvp:m.pvp,nuevo:true,
-      filas:m.filas.map(f=>({n:f.n,sku:f.sku,img:f.img}))});
+      filas:m.filas.map(f=>({n:f.n,sku:f.sku,img:f.img,imgs:f.imgs||[]}))});
     m.filas.forEach(f=>m.talles.forEach(t=>{ stock[f.sku+'|'+t]=f.stock[t]; }));
   });
   return {v:1, ts:new Date().toISOString(), pedidos:PED, promos:PROMOS, stock, extra};
@@ -1847,7 +1878,7 @@ function vCatalogo(){
     const mx=pr.length?Math.max(...pr.map(p=>p.pct)):0;
     return `<button class="cat" onclick="abrirCat('${c.id}')">
       ${mx?`<span class="cq promo">−${mx}%</span>`:q?`<span class="cq">${q} u.</span>`:''}
-      <span class="fig"><img src="${c.img}?width=800" alt="${c.nombre}" loading="lazy" onload="encuadre(this)" onerror="fotoFalla(this,'${c.nombre}')"></span>
+      <span class="fig"><img src="${px(c.img,800)}" alt="${c.nombre}" loading="lazy" onload="encuadre(this)" onerror="fotoFalla(this,'${c.nombre}')"></span>
       <span class="ov"><span class="cn">${c.nombre}</span></span>
     </button>`}).join('')}</div>`;
 }
@@ -1873,7 +1904,7 @@ function vSubcategorias(){
     const mx=pr.length?Math.max(...pr.map(p=>p.pct)):0;
     return `<button class="cat" onclick="abrirSub(${JSON.stringify(sc).replace(/"/g,'&quot;')})">
       ${mx?`<span class="cq promo">−${mx}%</span>`:q?`<span class="cq">${q} u.</span>`:''}
-      <span class="fig"><img src="${ms[0].filas[0].img}?width=640" alt="${esc(sc)}" loading="lazy" onload="encuadre(this)" onerror="fotoFalla(this,'${esc(sc)}')"></span>
+      <span class="fig"><img src="${px(ms[0].filas[0].img,640)}" alt="${esc(sc)}" loading="lazy" onload="encuadre(this)" onerror="fotoFalla(this,'${esc(sc)}')"></span>
       <span class="ov"><span class="cn">${sc}</span>${NOTA[sc]?`<span class="cnota">${NOTA[sc]}</span>`:''}</span>
     </button>`}).join('')}</div>`;
 }
@@ -1936,7 +1967,7 @@ function listaPlana(ms){
     return `<tr id="pl-${esc(k)}">
       <td class="l"><div class="plp">
         <button class="zoom mini-ph" onclick="abrirFoto('${f.sku}')" title="Ampliar foto">
-          <img src="${f.img}?width=120" alt="${esc(f.n)}" loading="lazy" onerror="fotoFalla(this,'')"></button>
+          <img src="${px(f.img,120)}" alt="${esc(f.n)}" loading="lazy" onerror="fotoFalla(this,'')"></button>
         <b>${m.nombre}</b></div></td>
       <td class="l">${f.n}</td>
       <td class="c">${t}</td>
@@ -1970,7 +2001,7 @@ function card(m){
       ${sinFotoPpal(m) ? `<div class="ph vacia" title="Abrí el modelo para ver los colores">
           <span>${m.filas.length}<i>colores</i></span></div>`
         : `<button class="zoom ph" onclick="event.stopPropagation();abrirFoto('${m.filas[0].sku}')" title="Ampliar foto">
-        <img src="${m.filas[0].img}?width=220" alt="${esc(m.nombre)}" loading="lazy" onerror="fotoFalla(this,'${esc(m.nombre)}')"><span class="lupa">⤢</span></button>`}
+        <img src="${px(m.filas[0].img,220)}" alt="${esc(m.nombre)}" loading="lazy" onerror="fotoFalla(this,'${esc(m.nombre)}')"><span class="lupa">⤢</span></button>`}
       <div>
         <div class="mn">${m.nombre}</div>
         <div class="specs">
@@ -2008,7 +2039,7 @@ function matriz(m){
     return `<tr id="fila-${f.sku}">
       <td class="l stick"><div class="cw">
         <button class="zoom" onclick="event.stopPropagation();abrirFoto('${f.sku}')" title="Ampliar foto">
-          <img src="${f.img}?width=160" alt="${esc(f.n)}" loading="lazy" onerror="fotoFalla(this,'')"><span class="lupa">⤢</span></button>
+          <img src="${px(f.img,160)}" alt="${esc(f.n)}" loading="lazy" onerror="fotoFalla(this,'')"><span class="lupa">⤢</span></button>
         <div><div class="rn">${f.n}</div><div class="rs">${f.sku}</div></div></div></td>
       <td class="pr"><span class="${pr?'pr-of':''}">${money(pmay(f))}</span>
         <small>PVP ${money(f.pvp)}</small></td>
@@ -2211,7 +2242,7 @@ function vPedido(){
         <div class="gh"><img src="${g.m.filas[0].img}" alt="" onerror="fotoFalla(this,'')"><div class="gn">${g.m.nombre}</div>
           <div class="gc">${g.m.col} · ${g.ls.reduce((a,l)=>a+cart[l.k],0)} u.</div></div>
         ${g.ls.map(l=>`<div class="ln">
-          <div class="li"><button class="zoom" onclick="abrirFoto('${l.f.sku}')" title="Ampliar foto"><img src="${l.f.img}?width=120" alt="" loading="lazy" onerror="fotoFalla(this,'')"></button>
+          <div class="li"><button class="zoom" onclick="abrirFoto('${l.f.sku}')" title="Ampliar foto"><img src="${px(l.f.img,120)}" alt="" loading="lazy" onerror="fotoFalla(this,'')"></button>
             <div><div class="d1">${l.f.n} · ${l.t}</div>
               <div class="d2">${l.f.sku} · ${l.f.stock[l.t]} disp.</div></div></div>
           <div class="stp has" id="lp-${esc(l.k)}">
@@ -2849,7 +2880,7 @@ const TALLES_SUG={
 let ALTA={talles:[]};
 
 function abrirAlta(){
-  ALTA={talles:[]};
+  ALTA={talles:[]}; ALTAFOTOS=[];
   $('al').classList.add('on');
   $('almodo').value='nuevo';
   pintarAlta();
@@ -2859,6 +2890,7 @@ function cerrarAlta(){ $('al').classList.remove('on'); }
 
 function pintarAlta(){
   const modo=$('almodo').value;
+  setTimeout(pintarFotos,0);
   const cats=CATS.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
   const mods=CAT.map(m=>`<option value="${m.id}">${m.nombre} · ${m.col} (${m.cat})</option>`).join('');
   const cols=[...new Set(CAT.map(m=>m.col))].sort();
@@ -2870,7 +2902,7 @@ function pintarAlta(){
         <div><label>SKU</label><input id="alsku" placeholder="SBA97XX" autocomplete="off"></div>
         <div><label>Colorway</label><input id="alcol" placeholder="Lowbow Marigold"></div>
       </div>
-      <div><label>Foto (URL, opcional)</label><input id="alimg" placeholder="https://…"></div>
+      <div><label>Fotos</label>${cajaFotos()}</div>
       <div><label>Stock inicial en cada talle</label><input id="alstk" type="number" min="0" value="0"></div>
       <div id="altallesbox"></div>
     </div>` : `
@@ -2897,7 +2929,7 @@ function pintarAlta(){
           <option>Inmediato</option><option>Disponible</option><option>Sin stock</option></select></div>
         <div><label>Stock inicial en cada talle</label><input id="alstk" type="number" min="0" value="0"></div>
       </div>
-      <div><label>Foto (URL, opcional)</label><input id="alimg" placeholder="https://…"></div>
+      <div><label>Fotos</label>${cajaFotos()}</div>
       <div id="altallesbox"></div>
     </div>`;
   pintarTalles();
@@ -2938,25 +2970,103 @@ function addTalle(){
   el.value=''; pintarTalles(); $('altnuevo').focus();
 }
 
+
+/* ═══════════ FOTOS DEL PRODUCTO ═══════════
+   Se arrastran o se eligen del disco, como en MercadoLibre. Cada imagen
+   se achica y se comprime en el navegador antes de guardarla, así el
+   catálogo no se hace pesado. La primera es la portada. */
+const FOTO_MAX = 1000;      // lado más largo, en píxeles
+const FOTO_Q   = 0.72;      // calidad del JPEG
+const FOTO_TOPE= 8;         // cuántas se pueden cargar por producto
+let ALTAFOTOS=[];
+
+function cajaFotos(){
+  return `<div class="fz" id="fz"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="event.preventDefault();this.classList.remove('drag');sumarFotos(event.dataTransfer.files)">
+      <input type="file" id="alfile" accept="image/*" multiple hidden
+        onchange="sumarFotos(this.files);this.value=''">
+      <div class="fzt" id="fzt"></div>
+      <div class="fzc">
+        <button type="button" class="und2" onclick="document.getElementById('alfile').click()">Elegir fotos</button>
+        <span>o arrastralas acá · la primera es la portada</span>
+      </div>
+    </div>`;
+}
+
+function pintarFotos(){
+  const c=$('fzt'); if(!c) return;
+  c.innerHTML = ALTAFOTOS.map((src,i)=>`
+    <div class="fth ${i===0?'ppal':''}" draggable="true"
+      ondragstart="FDRAG=${i}" ondragover="event.preventDefault()"
+      ondrop="event.preventDefault();moverFoto(FDRAG,${i})">
+      <img src="${src}" alt="">
+      ${i===0?'<b>Portada</b>':`<button type="button" class="fp" title="Usar como portada"
+        onclick="moverFoto(${i},0)">★</button>`}
+      <button type="button" class="fx" title="Quitar" onclick="quitarFoto(${i})">×</button>
+    </div>`).join('');
+}
+let FDRAG=null;
+function moverFoto(de,a){
+  if(de===null||de===a) return;
+  const x=ALTAFOTOS.splice(de,1)[0]; ALTAFOTOS.splice(a,0,x); FDRAG=null; pintarFotos();
+}
+function quitarFoto(i){ ALTAFOTOS.splice(i,1); pintarFotos(); }
+
+async function sumarFotos(files){
+  const lista=[...files].filter(f=>/^image\//.test(f.type));
+  if(!lista.length){ toast('Elegí archivos de imagen'); return; }
+  for(const f of lista){
+    if(ALTAFOTOS.length>=FOTO_TOPE){ toast('Hasta '+FOTO_TOPE+' fotos por producto'); break; }
+    try{ ALTAFOTOS.push(await achicar(f)); }
+    catch(e){ toast('No se pudo leer '+f.name); }
+  }
+  pintarFotos();
+}
+
+/* redimensiona y comprime en el navegador, sin subir nada a ningún lado */
+function achicar(file){
+  return new Promise((ok,no)=>{
+    const fr=new FileReader();
+    fr.onerror=()=>no();
+    fr.onload=()=>{
+      const im=new Image();
+      im.onerror=()=>no();
+      im.onload=()=>{
+        let {width:w,height:h}=im;
+        const r=Math.min(1, FOTO_MAX/Math.max(w,h));
+        w=Math.round(w*r); h=Math.round(h*r);
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        const cx=cv.getContext('2d');
+        cx.fillStyle='#fff'; cx.fillRect(0,0,w,h);   // fondo blanco para los PNG
+        cx.drawImage(im,0,0,w,h);
+        ok(cv.toDataURL('image/jpeg',FOTO_Q));
+      };
+      im.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
 function guardarAlta(){
   const modo=$('almodo').value;
   const sku=($('alsku').value||'').trim().toUpperCase();
   const col=($('alcol').value||'').trim();
-  const img=($('alimg').value||'').trim();
+  const fotos=ALTAFOTOS.slice();
   const stk=Math.max(0,parseInt($('alstk').value,10)||0);
   if(!sku) return err('Falta el SKU','alsku');
   if(idx[sku]) return err('El SKU '+sku+' ya existe en el catálogo','alsku');
   if(!col) return err('Falta el nombre del colorway','alcol');
   if(!ALTA.talles.length) return err('Elegí al menos un talle');
 
-  const foto=img||'';
-  const nuevaFila={n:col,sku,img:foto};
+  const nuevaFila={n:col,sku,img:fotos[0]||'',imgs:fotos};
 
   if(modo==='colorway'){
     const m=CAT.find(x=>x.id===$('almod').value);
     nuevaFila.pvp=m.pvp; nuevaFila.may=m.may; nuevaFila.mod=m.id;
     nuevaFila.stock={}; m.talles.forEach(t=>nuevaFila.stock[t]=stk);
-    if(!nuevaFila.img) nuevaFila.img=m.filas[0].img;
+    if(!nuevaFila.img){ nuevaFila.img=m.filas[0].img; nuevaFila.imgs=[]; }
     m.filas.push(nuevaFila);
     idx[sku]={m,f:nuevaFila};
     cerrarAlta(); guardar(); toast(sku+' agregado a '+m.nombre); ir('stock'); return;
@@ -2976,7 +3086,7 @@ function guardarAlta(){
   m.specs=[m.comp].filter(Boolean);
   nuevaFila.pvp=pvp; nuevaFila.may=may; nuevaFila.mod=m.id;
   nuevaFila.stock={}; m.talles.forEach(t=>nuevaFila.stock[t]=stk);
-  if(!nuevaFila.img) nuevaFila.img=(deCat(m.cat)[0]||CAT[0]).filas[0].img;
+  if(!nuevaFila.img){ nuevaFila.img=(deCat(m.cat)[0]||CAT[0]).filas[0].img; nuevaFila.imgs=[]; }
   CAT.push(m); idx[sku]={m,f:nuevaFila};
   cerrarAlta(); guardar(); toast(nom+' · '+col+' creado'); ir('stock');
 }
