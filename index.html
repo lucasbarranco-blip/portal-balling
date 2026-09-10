@@ -770,15 +770,10 @@ table.remt tfoot tr.big td{font-weight:700;font-size:18px;border-top:1px solid v
       <input id="em" type="email" autocomplete="username" placeholder="pedidos@tuempresa.com"></div>
     <div class="f"><label>Contraseña</label>
       <input id="pw" type="password" autocomplete="current-password" placeholder="mínimo 6 caracteres"></div>
-    <div id="lreg" style="display:none">
-      <div class="f"><label>Empresa</label>
-        <input id="lrazon" placeholder="Distribuidora Del Sur SRL"></div>
-      <div class="f"><label>CUIT <span class="opt">opcional</span></label>
-        <input id="lcuit" placeholder="30-71204558-9"></div>
     </div>
     <button class="go" id="lbtn" onclick="entrar()">Entrar</button>
     <div id="lerr"></div>
-    <div class="lalt" id="lalt">¿Primera vez? <button onclick="cambiarModo('registro')">Creá tu cuenta</button></div>
+    <div class="lalt" id="lalt">¿No tenés acceso? Pedíselo al representante de Balling.</div>
   </div></div>
 </div>
 
@@ -1747,7 +1742,7 @@ async function conCabecera(){
 /* mensajes de Firebase, traducidos */
 const ERR={
   EMAIL_EXISTS:'Ese email ya tiene una cuenta. Probá iniciando sesión.',
-  EMAIL_NOT_FOUND:'No encontramos una cuenta con ese email.',
+  EMAIL_NOT_FOUND:'Ese email no tiene acceso. Pedile una cuenta al representante.',
   INVALID_PASSWORD:'La contraseña no es correcta.',
   INVALID_LOGIN_CREDENTIALS:'Email o contraseña incorrectos.',
   INVALID_EMAIL:'Ese email no tiene un formato válido.',
@@ -1793,23 +1788,12 @@ async function hayUsuarios(){
 }
 
 /* ═══ acceso ═══ */
-let MODO='entrar';                    // 'entrar' | 'registro'
-function cambiarModo(m){
-  MODO=m; $('lerr').textContent='';
-  $('lreg').style.display = m==='registro' ? 'block' : 'none';
-  $('lbtn').textContent   = m==='registro' ? 'Crear cuenta' : 'Entrar';
-  $('ltit').textContent   = m==='registro' ? 'Crear tu cuenta' : 'Acceso distribuidores';
-  $('lsub').textContent   = m==='registro'
-    ? 'Elegí un email y una contraseña. Con eso entrás desde cualquier computadora.'
-    : 'Cargá tu pedido con precios mayoristas y stock en vivo.';
-  $('lalt').innerHTML = m==='registro'
-    ? '¿Ya tenés cuenta? <button onclick="cambiarModo(\'entrar\')">Iniciá sesión</button>'
-    : '¿Primera vez? <button onclick="cambiarModo(\'registro\')">Creá tu cuenta</button>';
-  setTimeout(()=>$('em').focus(),40);
-}
+/* El portal es cerrado: las cuentas las crea el representante desde el
+   panel de Usuarios. No hay alta pública. */
+const MODO='entrar';
 
-/* ── Cuentas de prueba ──────────────────────────────────────────
-   Atajos para recorrer el portal sin registrarse:
+/* ── Cuentas de prueba ────────────────────────────────────────────────
+   Atajos para recorrer el portal sin tipear el mail entero:
      demo  / demo   -> entra como mayorista
      admin / admin  -> entra como representante
    OJO: estas claves quedan a la vista de cualquiera que abra el
@@ -1820,43 +1804,28 @@ const ATAJOS=[
   {alias:'admin', clave:'admin', mail:'admin@balling.portal', pass:'admin-portal-2026'}
 ];
 
+
 async function entrar(){
   let e=$('em').value.trim(), p=$('pw').value;
   const atajo=ATAJOS.find(a=>a.alias===e.toLowerCase() && a.clave===p);
-  if(atajo){ e=atajo.mail; p=atajo.pass; MODO='entrar'; }
+  if(atajo){ e=atajo.mail; p=atajo.pass; }
   const err=$('lerr'); err.textContent='';
   if(!e||!p){ err.textContent='Completá email y contraseña.'; return; }
   if(!conectado()){ err.textContent='El portal no tiene base configurada.'; return; }
   $('lbtn').disabled=true; $('lbtn').textContent='Un momento…';
-
   try{
-    if(MODO==='registro'){
-      const razon=$('lrazon').value.trim();
-      if(!razon){ throw {msg:'Poné el nombre de tu empresa.'}; }
-      if(p.length<6){ throw {msg:ERR.WEAK_PASSWORD}; }
-      let r=await fetch(authURL('signUp'),{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({email:e,password:p,returnSecureToken:true})});
-      let j=await r.json();
-      if(!r.ok) throw {msg:traducir(j.error&&j.error.message)};
-      guardarSesion(j);
-      const primero = !(await hayUsuarios());
-      await escribirFicha(SES.uid,{rol:primero?'admin':'may',email:e,
-        razon, cuit:$('lcuit').value.trim()});
-    } else {
-      const r=await fetch(authURL('signInWithPassword'),{method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({email:e,password:p,returnSecureToken:true})});
-      const j=await r.json();
-      if(!r.ok) throw {msg:traducir(j.error&&j.error.message)};
-      guardarSesion(j);
-    }
+    const r=await fetch(authURL('signInWithPassword'),{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:e,password:p,returnSecureToken:true})});
+    const j=await r.json();
+    if(!r.ok) throw {msg:traducir(j.error&&j.error.message)};
+    guardarSesion(j);
     await abrir();
   }catch(x){
     err.textContent = x&&x.msg ? x.msg : 'No pudimos conectarnos. Revisá tu internet.';
     cerrarSesion();
   }finally{
-    $('lbtn').disabled=false;
-    $('lbtn').textContent = MODO==='registro'?'Crear cuenta':'Entrar';
+    $('lbtn').disabled=false; $('lbtn').textContent='Entrar';
   }
 }
 
@@ -1865,7 +1834,7 @@ function salir(){ cerrarSesion(); location.reload(); }
 /* si la sesión sigue viva, entra derecho sin pedir nada */
 async function arranque(){
   if(SES && conectado() && await token()){ await abrir(); return; }
-  cambiarModo('entrar');
+  $('lerr').textContent=''; setTimeout(()=>$('em').focus(),40);
 }
 
 async function abrir(){
@@ -2045,8 +2014,7 @@ function listaPlana(ms){
       <td class="l">${f.n}</td>
       <td class="c">${t}</td>
       <td class="l m">${f.sku}</td>
-      <td class="c">${st===0?`<span class="stk no">Sin stock</span>`
-         : st<POCO?`<span class="stk low">Últimas unidades</span>` : ''}</td>
+      <td class="c">${st===0?`<span class="stk no">Sin stock</span>`:''}</td>
       <td class="n"><span class="${pr?'pr-of':''}">${money(pmay(f))}</span></td>
       <td class="n mute">${money(f.pvp)}</td>
       <td>
@@ -2080,7 +2048,7 @@ function card(m){
         <div class="specs">
           <span class="sp k">${m.col}</span>${m.specs.map(s=>`<span class="sp">${s}</span>`).join('')}
           <span class="sp">${m.filas.length} colorway${m.filas.length>1?'s':''} · ${m.talles.length} talle${m.talles.length>1?'s':''}</span>
-          ${stk===0?'<span class="sp e">Sin stock</span>':stk<POCO?'<span class="sp e">Poca disponibilidad</span>':''}
+          ${stk===0?'<span class="sp e">Sin stock</span>':''}
           ${pr?`<span class="promo sp-pr">−${pr.pct}%</span>`:''}
           ${q?`<span class="sp t">${q} u. en el pedido</span>`:''}
         </div>
@@ -2119,11 +2087,10 @@ function matriz(m){
       ${m.talles.map(t=>{const k=f.sku+'|'+t,st=f.stock[t],v=val(k);
         /* No mostramos cantidades: solo si hay, si queda poco, o si no hay. */
         const cl=st===0?'no':st<POCO?'low':'ok';
-        /* Solo avisamos cuando no hay o cuando quedan pocas.
-           Si hay stock normal no mostramos nada. */
+        /* Al mayorista solo le decimos si hay o no hay: la cantidad
+           exacta es información nuestra. */
         return `<td class="cel ${cl}">
-          <span class="aviso">${st===0?`<span class="stk no">Sin stock</span>`
-           : st<POCO?`<span class="stk low">Últimas unidades</span>` : ''}</span>
+          <span class="aviso">${st===0?`<span class="stk no">Sin stock</span>`:''}</span>
           <div class="stp ${v?'has':''}" id="sp-${esc(k)}">
             <button onclick="event.stopPropagation();paso('${esc(k)}',-1)" ${(!st||v<=0)?'disabled':''} aria-label="Restar">−</button>
             <input type="number" min="0" max="${st}" value="${v||''}" placeholder="0" ${st?'':'disabled'}
@@ -2378,6 +2345,49 @@ function pedirConfirmacion(){
 function cerrarConf(){ $('cf').classList.remove('on'); document.body.style.overflow=''; }
 async function confirmarEnvio(){ cerrarConf(); await enviar(); }
 
+
+/* ═══════════ AVISO POR MAIL AL REPRESENTANTE ═══════════
+   Una página estática no puede mandar mails por sí sola: hace falta un
+   servicio que reciba el pedido y lo reenvíe. Acá va la dirección de ese
+   servicio. Mientras esté vacía, el portal funciona igual y el pedido
+   queda en el panel; simplemente no sale el aviso.                      */
+const AVISO = {
+  url: "",                                  // endpoint del servicio
+  para: ["arielper88@gmail.com", "argentina@ballinghockey.com"]
+};
+
+function textoAviso(p){
+  const ls=lineasDe(p);
+  return [
+    'Pedido #'+p.n,
+    'Cliente: '+(p.cli||'')+(p.cuit?' · CUIT '+p.cuit:''),
+    'Fecha: '+fecha(p.f),
+    'Unidades: '+p.u,
+    'Total sin IVA: '+money(p.t),
+    '',
+    ...ls.map(l=>`${l.sku}  ${l.talle}  x${l.cant}  ${l.nombre}  ${money(l.sub)}`),
+    '',
+    p.notas?('Notas: '+p.notas):'',
+    '',
+    'Entrá al portal para aceptarlo o rechazarlo.'
+  ].filter(x=>x!==null).join('\n');
+}
+
+/* No frenamos el pedido si el aviso falla: el pedido ya quedó guardado. */
+async function avisarPedido(p){
+  if(!AVISO.url) return;
+  try{
+    await fetch(AVISO.url,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        para: AVISO.para,
+        asunto: 'Nuevo pedido #'+p.n+' · '+(p.cli||'mayorista'),
+        texto: textoAviso(p),
+        pedido: {n:p.n, cliente:p.cli, cuit:p.cuit, fecha:p.f,
+                 unidades:p.u, total:p.t, items:lineasDe(p)}
+      })});
+  }catch(e){ /* el pedido ya está cargado; el aviso es adicional */ }
+}
+
 async function enviar(){
   const t=totales(); if(!t.u) return;
   const items=Object.keys(cart).map(k=>{const{m,f,t:tl}=find(k);
@@ -2387,7 +2397,9 @@ async function enviar(){
   PED.unshift({n:num,f:new Date().toISOString().slice(0,10),e:'pendiente',t:t.total,u:t.u,
     cli:CLI.razon, cuit:CLI.cuit, uid:SES?SES.uid:null,
     items:{...cart},notas:$('notas')?.value||''});
-  cart={}; draft={}; olvidarCart(); guardar(); toast('Pedido #'+num+' enviado'); nav(); ir('historial');
+  cart={}; draft={}; olvidarCart(); guardar();
+  avisarPedido(PED[0]);
+  toast('Pedido #'+num+' enviado'); nav(); ir('historial');
 }
 
 /* ═══ historial ═══ */
