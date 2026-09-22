@@ -2352,7 +2352,10 @@ async function confirmarEnvio(){ cerrarConf(); await enviar(); }
    servicio. Mientras esté vacía, el portal funciona igual y el pedido
    queda en el panel; simplemente no sale el aviso.                      */
 const AVISO = {
-  url: "",                                  // endpoint del servicio
+  /* Servicio propio en Google Apps Script: manda los mails desde la
+     casilla de Lucas. Si algún día hay que rehacerlo, se publica el
+     script de nuevo y se pega acá la URL nueva. */
+  url: "https://script.google.com/macros/s/AKfycbyHBJF9CAsEcXHOOUm7zmz18xi5uiGHY_PfNMdt5JkCm18l9edDRc5y7QBC-WCrgtU/exec",
   para: ["arielper88@gmail.com", "argentina@ballinghockey.com"]
 };
 
@@ -2377,7 +2380,9 @@ function textoAviso(p){
 async function avisarPedido(p){
   if(!AVISO.url) return;
   try{
-    await fetch(AVISO.url,{method:'POST',headers:{'Content-Type':'application/json'},
+    /* text/plain evita el preflight: Apps Script no responde a OPTIONS */
+    await fetch(AVISO.url,{method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify({
         para: AVISO.para,
         asunto: 'Nuevo pedido #'+p.n+' · '+(p.cli||'mayorista'),
