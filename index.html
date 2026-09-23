@@ -2369,7 +2369,7 @@ const AVISO = {
   /* Servicio propio en Google Apps Script: manda los mails desde la
      casilla de Lucas. Si algún día hay que rehacerlo, se publica el
      script de nuevo y se pega acá la URL nueva. */
-  url: "https://script.google.com/macros/s/AKfycbyHBJF9CAsEcXHOOUm7zmz18xi5uiGHY_PfNMdt5JkCm18l9edDRc5y7QBC-WCrgtU/exec",
+  url: "https://script.google.com/macros/s/AKfycbwJCfNwKRV5or1mPOFzGPjsIyPkKQhIzfaOpmTCan3NGJUEC_YMORPFyQB8LBJSKm9Hew/exec",
   para: ["arielper88@gmail.com", "argentina@ballinghockey.com"]
 };
 
@@ -2522,6 +2522,31 @@ async function crearUsuario(){
 
 /* Firebase no deja fijarle una contraseña nueva a otro usuario desde el
    navegador: lo que sí podemos es mandarle el mail para que la rehaga. */
+
+/* ── Cambiar la contraseña de un mayorista ────────────────────────
+   El portal no puede hacerlo solo: Firebase no deja que una cuenta
+   toque la de otra desde el navegador. Se lo pedimos al servicio, que
+   corre con permisos sobre el proyecto y antes verifica que quien lo
+   pide tenga rol de representante. */
+async function cambiarClave(uid){
+  const u=USUARIOS.find(x=>x.uid===uid); if(!u) return;
+  const nombre=u.razon||u.email;
+  const pass=prompt('Contraseña nueva para '+nombre+'\n\nMínimo 6 caracteres. Después pasásela vos.','');
+  if(pass===null) return;
+  if(pass.trim().length<6){ toast('La contraseña necesita al menos 6 caracteres'); return; }
+  if(!AVISO.url){ toast('No hay servicio configurado'); return; }
+  toast('Cambiando la clave…');
+  try{
+    const t=await token();
+    const r=await fetch(AVISO.url,{method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({accion:'clave', idToken:t, uid, pass:pass.trim()})});
+    const j=await r.json();
+    if(j.ok) alert('Listo. La clave de '+nombre+' ahora es:\n\n'+pass.trim()+'\n\nPasásela por donde prefieras.');
+    else toast(j.error||'No se pudo cambiar la clave');
+  }catch(e){ toast('No se pudo conectar con el servicio'); }
+}
+
 async function blanquear(uid){
   const u=USUARIOS.find(x=>x.uid===uid); if(!u) return;
   if(!confirm('Le mandamos a '+u.email+' un mail para que elija una contraseña nueva.\n\n¿Seguimos?')) return;
@@ -2599,7 +2624,8 @@ async function vUsuarios(){
         <td class="acc">
           ${u.rol==='baja'
             ? `<button class="mini" onclick="reactivar('${u.uid}')">Reactivar</button>`
-            : `<button class="mini" onclick="blanquear('${u.uid}')" title="Le manda un mail para rehacer la contraseña">Blanquear clave</button>
+            : `<button class="mini" onclick="cambiarClave('${u.uid}')" title="Le ponés una contraseña nueva vos mismo">Cambiar clave</button>
+               <button class="mini" onclick="blanquear('${u.uid}')" title="Le manda un mail para que la rehaga él">Mandar mail</button>
                ${u.uid===yo?'':`
                  <button class="mini" onclick="cambiarRol('${u.uid}','${u.rol==='admin'?'may':'admin'}')">
                    ${u.rol==='admin'?'Quitar panel':'Dar acceso al panel'}</button>
