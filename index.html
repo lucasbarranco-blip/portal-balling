@@ -1848,6 +1848,11 @@ async function arranque(){
 
 async function abrir(){
   const f=await leerFicha(SES.uid) || {rol:'may',razon:'',cuit:''};
+  if(f.rol==='baja'){
+    cerrarSesion();
+    $('lerr').textContent='Esta cuenta está dada de baja. Hablá con el representante.';
+    return;
+  }
   S={rol:f.rol, n:f.razon||SES.email, s:f.cuit?('CUIT '+f.cuit):SES.email};
   if(f.rol==='admin'){ S.n='Representante LatAm'; S.s='Panel interno'; }
   CLI.razon = f.razon || CLI.razon;
@@ -2528,13 +2533,22 @@ async function blanquear(uid){
   }catch(e){ toast('No se pudo enviar el mail'); }
 }
 
+/* Dar de baja NO borra la ficha: la marca. Si la borráramos, la cuenta
+   de acceso seguiría existiendo en Firebase pero dejaría de aparecer acá,
+   y ese email quedaría ocupado sin que nadie pueda verlo ni reactivarlo. */
 async function borrarUsuario(uid){
   const u=USUARIOS.find(x=>x.uid===uid); if(!u) return;
-  if(!confirm('Se le quita el acceso a '+(u.razon||u.email)+'.\n\nSus pedidos quedan en el historial. ¿Seguimos?')) return;
-  const h=await conCabecera(); if(!h){ toast('Sesión vencida'); return; }
-  const r=await fetch(docFS('usuarios',uid),{method:'DELETE',headers:h});
-  toast(r.ok?'Acceso dado de baja':'No se pudo dar de baja');
-  if(r.ok) vUsuarios();
+  if(!confirm('Se le quita el acceso a '+(u.razon||u.email)+
+    '.\n\nSus pedidos quedan en el historial y podés reactivarlo cuando quieras. ¿Seguimos?')) return;
+  const ok=await escribirFicha(uid,{...u, rol:'baja'});
+  toast(ok?'Acceso dado de baja':'No se pudo dar de baja');
+  if(ok) vUsuarios();
+}
+async function reactivar(uid){
+  const u=USUARIOS.find(x=>x.uid===uid); if(!u) return;
+  const ok=await escribirFicha(uid,{...u, rol:'may'});
+  toast(ok?'Acceso reactivado':'No se pudo reactivar');
+  if(ok) vUsuarios();
 }
 
 async function vUsuarios(){
@@ -2548,7 +2562,7 @@ async function vUsuarios(){
     <div class="tacc"><button class="und2 ok" onclick="abrirUsr()">+ Nuevo usuario</button></div></div>
   <div class="kpis">
     <div class="kpi"><div class="k">Cuentas</div><div class="v">${USUARIOS.length}</div></div>
-    <div class="kpi"><div class="k">Mayoristas</div><div class="v">${USUARIOS.filter(u=>u.rol!=='admin').length}</div></div>
+    <div class="kpi"><div class="k">Mayoristas activos</div><div class="v">${USUARIOS.filter(u=>u.rol==='may').length}</div></div>
     <div class="kpi"><div class="k">Con acceso al panel</div><div class="v t">${USUARIOS.filter(u=>u.rol==='admin').length}</div></div>
   </div>
   ${(()=>{
@@ -2566,6 +2580,7 @@ async function vUsuarios(){
         <option value="">Todos los roles</option>
         <option value="admin" ${fUsrRol==='admin'?'selected':''}>Representantes</option>
         <option value="may"   ${fUsrRol==='may'  ?'selected':''}>Mayoristas</option>
+        <option value="baja"  ${fUsrRol==='baja' ?'selected':''}>Dados de baja</option>
       </select>
       <select onchange="oUsr=this.value;vUsuarios()">
         <option value="empresa" ${oUsr==='empresa'?'selected':''}>Ordenar por empresa</option>
@@ -2579,13 +2594,16 @@ async function vUsuarios(){
       ${l.map(u=>`<tr>
         <td style="font-weight:600">${esc(u.razon||'—')}${u.uid===yo?'<span class="nvo">vos</span>':''}</td>
         <td class="m">${esc(u.email)}</td><td class="m">${esc(u.cuit||'—')}</td>
-        <td><span class="badge ${u.rol==='admin'?'t':''}">${u.rol==='admin'?'Representante':'Mayorista'}</span></td>
+        <td><span class="badge ${u.rol==='admin'?'t':(u.rol==='baja'?'e':'')}">${
+          u.rol==='admin'?'Representante':(u.rol==='baja'?'Dado de baja':'Mayorista')}</span></td>
         <td class="acc">
-          <button class="mini" onclick="blanquear('${u.uid}')" title="Le manda un mail para rehacer la contraseña">Blanquear clave</button>
-          ${u.uid===yo?'':`
-            <button class="mini" onclick="cambiarRol('${u.uid}','${u.rol==='admin'?'may':'admin'}')">
-              ${u.rol==='admin'?'Quitar panel':'Dar acceso al panel'}</button>
-            <button class="mini no" onclick="borrarUsuario('${u.uid}')">Dar de baja</button>`}
+          ${u.rol==='baja'
+            ? `<button class="mini" onclick="reactivar('${u.uid}')">Reactivar</button>`
+            : `<button class="mini" onclick="blanquear('${u.uid}')" title="Le manda un mail para rehacer la contraseña">Blanquear clave</button>
+               ${u.uid===yo?'':`
+                 <button class="mini" onclick="cambiarRol('${u.uid}','${u.rol==='admin'?'may':'admin'}')">
+                   ${u.rol==='admin'?'Quitar panel':'Dar acceso al panel'}</button>
+                 <button class="mini no" onclick="borrarUsuario('${u.uid}')">Dar de baja</button>`}`}
         </td></tr>`).join('')}
     </tbody></table></div>`:
     `<div class="empty"><div class="t">Ninguna cuenta coincide</div>
