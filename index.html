@@ -2641,6 +2641,24 @@ async function reactivar(uid){
   if(ok) vUsuarios();
 }
 
+
+/* ── Buscadores del panel ─────────────────────────────────────────
+   Antes cada tecla redibujaba la tabla entera y el cursor se perdía.
+   Ahora esperamos a que la persona deje de tipear, y al repintar le
+   devolvemos el foco y la posición del cursor donde estaba. */
+let TBUSCA=null, FOCO=null;
+function buscar(campo, el, repintar){
+  window[campo]=el.value;
+  FOCO={id:el.id, pos:el.selectionStart};
+  clearTimeout(TBUSCA);
+  TBUSCA=setTimeout(()=>{ repintar(); devolverFoco(); }, 250);
+}
+function devolverFoco(){
+  if(!FOCO) return;
+  const e=document.getElementById(FOCO.id);
+  if(e){ e.focus(); try{ e.setSelectionRange(FOCO.pos,FOCO.pos); }catch(x){} }
+}
+
 async function vUsuarios(){
   $('view').innerHTML=`<div class="title"><div><div class="eb">Accesos</div><h1 class="wide">Usuarios</h1></div>
     <div class="sub">Cada mayorista se crea su cuenta desde la pantalla de acceso, o se la creás vos acá.</div></div>
@@ -2664,8 +2682,8 @@ async function vUsuarios(){
                rol:(a,b)=>(a.rol===b.rol?0:a.rol==='admin'?-1:1)};
     l=[...l].sort(ord[oUsr]||ord.empresa);
     return `<div class="bar filtros">
-      <input placeholder="Buscar por empresa, email o CUIT" value="${esc(fUsr)}"
-        oninput="fUsr=this.value;vUsuarios()">
+      <input id="qUsr" placeholder="Buscar por empresa, email o CUIT" value="${esc(fUsr)}"
+        oninput="buscar('fUsr',this,vUsuarios)">
       <select onchange="fUsrRol=this.value;vUsuarios()">
         <option value="">Todos los roles</option>
         <option value="admin" ${fUsrRol==='admin'?'selected':''}>Representantes</option>
@@ -3037,8 +3055,8 @@ function vEntrantes(){
       <div class="v">${money(PED.filter(p=>p.fac).reduce((a,p)=>a+p.fac.importe,0))}</div></div>
   </div>
   <div class="bar filtros">
-    <input placeholder="Buscar por número, cliente, CUIT o factura" value="${esc(fBusca)}"
-      oninput="fBusca=this.value;vEntrantes()">
+    <input id="qPed" placeholder="Buscar por número, cliente, CUIT o factura" value="${esc(fBusca)}"
+      oninput="buscar('fBusca',this,vEntrantes)">
     <select onchange="fCli=this.value;vEntrantes()">
       <option value="">Todos los clientes</option>
       ${clientes.map(c=>`<option value="${esc(c)}" ${fCli===c?'selected':''}>${esc(c)}</option>`).join('')}
@@ -3123,8 +3141,8 @@ function vStock(){
     <div class="kpi"><div class="k">Poca disponibilidad</div><div class="v ${bajo?'e':''}">${bajo}</div></div>
   </div>
   <div class="bar filtros">
-    <input placeholder="Buscar por SKU, modelo, colorway o talle" value="${esc(fStkPanel)}"
-      oninput="fStkPanel=this.value;vStock()">
+    <input id="qStk" placeholder="Buscar por SKU, modelo, colorway o talle" value="${esc(fStkPanel)}"
+      oninput="buscar('fStkPanel',this,vStock)">
     <select onchange="fStkCat=this.value;fStkCol='';vStock()">
       <option value="">Todas las categorías</option>
       ${CATS.map(c=>`<option value="${c.id}" ${fStkCat===c.id?'selected':''}>${c.nombre}</option>`).join('')}
