@@ -962,7 +962,7 @@ table.remt tfoot tr.big td{font-weight:700;font-size:18px;border-top:1px solid v
 <div id="un" class="modal">
   <div class="padbox" style="max-width:520px">
     <div class="padh"><div><h3>Nuevo usuario</h3>
-      <p>Creás la cuenta y le pasás el email y la contraseña. Después él la puede cambiar.</p></div>
+      <p>Creás la cuenta y le pasás el email y la contraseña. Si ese email ya existía, la recuperamos.</p></div>
       <button class="x" onclick="cerrarUsr()">×</button></div>
     <div class="padb">
       <div class="mform">
@@ -2514,6 +2514,32 @@ function abrirUsr(){
 }
 function cerrarUsr(){ $('un').classList.remove('on'); }
 
+
+/* Le preguntamos al servicio el identificador de una cuenta por su email.
+   Firebase no deja listar cuentas desde el navegador; el servicio sí puede
+   porque corre con permisos sobre el proyecto. */
+async function buscarUid(mail){
+  if(!AVISO.url) return null;
+  try{
+    const t=await token();
+    const r=await fetch(AVISO.url,{method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({accion:'buscar', idToken:t, email:mail})});
+    const j=await r.json();
+    return j.ok ? j.uid : null;
+  }catch(e){ return null; }
+}
+async function ponerClave(uid,pass){
+  if(!AVISO.url) return {ok:false,error:'No hay servicio configurado'};
+  try{
+    const t=await token();
+    const r=await fetch(AVISO.url,{method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({accion:'clave', idToken:t, uid, pass})});
+    return await r.json();
+  }catch(e){ return {ok:false,error:'No se pudo conectar con el servicio'}; }
+}
+
 async function crearUsuario(){
   const razon=$('unr').value.trim(), mail=$('une').value.trim();
   const pass=$('unp').value, cuit=$('unc').value.trim(), rol=$('unrol').value;
@@ -2527,6 +2553,22 @@ async function crearUsuario(){
     const r=await fetch(authURL('signUp'),{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({email:mail,password:pass,returnSecureToken:true})});
     const j=await r.json();
+
+    /* Si el email ya existe en Firebase pero no figura en el panel, es una
+       cuenta huérfana: quedó sin ficha. En vez de dejarla trabada, la
+       adoptamos — le ponemos la clave que pusiste y le creamos la ficha. */
+    if(!r.ok && (j.error&&j.error.message||'').startsWith('EMAIL_EXISTS')){
+      SES=mia;
+      const uid=await buscarUid(mail);
+      if(!uid) throw {msg:'Ese email ya existe pero no pudimos encontrarlo. Avisale a quien administra el portal.'};
+      if(USUARIOS.some(u=>u.uid===uid)) throw {msg:'Esa cuenta ya está en la lista. Buscala y editala.'};
+      const puso=await ponerClave(uid,pass);
+      if(!puso.ok) throw {msg:puso.error||'No se pudo asignarle la contraseña.'};
+      const ok=await escribirFicha(uid,{rol,email:mail,razon,cuit});
+      if(!ok) throw {msg:'No se pudo guardar la ficha.'};
+      cerrarUsr(); toast('Cuenta recuperada para '+razon);
+      vUsuarios(); return;
+    }
     if(!r.ok) throw {msg:traducir(j.error&&j.error.message)};
     /* la ficha se escribe con el token del usuario recién creado */
     const f=await fetch(docFS('usuarios',j.localId),{method:'PATCH',
