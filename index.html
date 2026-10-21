@@ -939,7 +939,7 @@ table.remt tfoot tr.big td{font-weight:700;font-size:18px;border-top:1px solid v
 <div id="pc" class="modal">
   <div class="padbox" style="max-width:460px">
     <div class="padh"><div><h3>Editar precio</h3>
-      <p><b id="pcn"></b> · se aplica a todos los colores y talles del modelo.</p></div>
+      <p><b id="pcn"></b></p></div>
       <button class="x" onclick="cerrarPrecio()">×</button></div>
     <div class="padb">
       <div class="mform">
@@ -947,6 +947,10 @@ table.remt tfoot tr.big td{font-weight:700;font-size:18px;border-top:1px solid v
           <input id="pcm" type="number" min="0" step="1"></div>
         <div><label>PVP sugerido</label>
           <input id="pcp" type="number" min="0" step="1"></div>
+        <div id="pcalc"><label>Aplicar a</label><select id="pcambito">
+          <option value="color" id="pcsolo">Solo este color</option>
+          <option value="modelo">Todos los colores del modelo</option>
+        </select></div>
       </div>
       <div id="pcerr" style="color:var(--ember);font:400 12px/1.6 'Instrument Sans';min-height:18px;margin-top:8px"></div>
     </div>
@@ -1393,12 +1397,15 @@ CAT.forEach(m=>{
 /* Nos guardamos el precio de lista para saber cuáles se editaron. */
 CAT.forEach(m=>{ m.may0=m.may; m.pvp0=m.pvp; });
 
-/* El precio vive en el modelo y también copiado en cada fila: hay que
-   cambiarlo en los dos lados para que el catálogo y el carrito coincidan. */
+/* El precio vive en el modelo y también copiado en cada fila. Cambiar el
+   del modelo arrastra a todas sus filas; cambiar el de una fila toca solo
+   ese color, que es lo que pidió el cliente: un colorway puede valer
+   distinto sin mover el resto. */
 function ponerPrecio(m,may,pvp){
   m.may=may; m.pvp=pvp;
   m.filas.forEach(f=>{ f.may=may; f.pvp=pvp; });
 }
+function ponerPrecioFila(f,may,pvp){ f.may=may; f.pvp=pvp; }
 
 const idx={}; CAT.forEach(m=>m.filas.forEach(f=>idx[f.sku]={m,f}));
 
@@ -1664,9 +1671,14 @@ function snapshot(){
   });
   /* Precios editados a mano. Solo guardamos los que cambiaron respecto
      de la lista original, así el archivo no se llena de repetidos. */
-  const precios={};
-  CAT.forEach(m=>{ if(m.may!==m.may0 || m.pvp!==m.pvp0) precios[m.id]={may:m.may,pvp:m.pvp}; });
-  return {v:1, ts:new Date().toISOString(), pedidos:PED, promos:PROMOS, stock, extra, precios};
+  const precios={}, preciosSku={};
+  CAT.forEach(m=>{
+    if(m.may!==m.may0 || m.pvp!==m.pvp0) precios[m.id]={may:m.may,pvp:m.pvp};
+    /* y aparte, los colores que se apartaron del precio del modelo */
+    m.filas.forEach(f=>{ if(f.may!==m.may || f.pvp!==m.pvp)
+      preciosSku[f.sku]={may:f.may,pvp:f.pvp}; });
+  });
+  return {v:1, ts:new Date().toISOString(), pedidos:PED, promos:PROMOS, stock, extra, precios, preciosSku};
 }
 function aplicar(d){
   if(!d) return;
@@ -1679,8 +1691,12 @@ function aplicar(d){
   });
   if(d.stock) for(const k in d.stock){ const [sku,t]=k.split('|'); const r=idx[sku];
     if(r && r.f.stock[t]!==undefined) r.f.stock[t]=d.stock[k]; }
+  /* primero el del modelo, que pisa todas sus filas; después los colores
+     que tienen precio propio, para que no se los lleve por delante */
   if(d.precios) for(const id in d.precios){ const m=CAT.find(x=>x.id===id);
     if(m) ponerPrecio(m, d.precios[id].may, d.precios[id].pvp); }
+  if(d.preciosSku) for(const sku in d.preciosSku){ const r=idx[sku];
+    if(r) ponerPrecioFila(r.f, d.preciosSku[sku].may, d.preciosSku[sku].pvp); }
   if(Array.isArray(d.pedidos)) PED=d.pedidos;
   if(Array.isArray(d.promos)) PROMOS=d.promos;
   SYNC.ts=d.ts||null;
@@ -3186,16 +3202,24 @@ function limpiarStk(){ fStkPanel=fStkCat=fStkCol=fStkEst=''; vStock(); }
 /* ── Editar el precio de un modelo ────────────────────────────────
    El precio es del modelo, no de cada color, así que al cambiarlo se
    actualizan todas sus líneas de una. */
-let PRECIO=null;
-function abrirPrecio(id){
+let PRECIO=null, PRECIOF=null;
+function abrirPrecio(id,sku){
   const m=CAT.find(x=>x.id===id); if(!m) return;
-  PRECIO=m;
-  $('pcn').textContent=m.nombre;
-  $('pcm').value=m.may; $('pcp').value=m.pvp;
+  PRECIO=m; PRECIOF=sku?m.filas.find(f=>f.sku===sku):null;
+  const base=PRECIOF||m;
+  $('pcn').textContent=m.nombre+(PRECIOF?' · '+PRECIOF.n:'');
+  $('pcm').value=base.may; $('pcp').value=base.pvp;
+  /* si el modelo tiene un solo color no hay nada que elegir */
+  const varios=m.filas.length>1 && PRECIOF;
+  $('pcalc').style.display = varios?'':'none';
+  if(varios){
+    $('pcsolo').textContent='Solo '+PRECIOF.n;
+    $('pcambito').value='color';
+  }
   $('pcerr').textContent='';
   $('pc').classList.add('on'); setTimeout(()=>{$('pcm').focus(); $('pcm').select();},50);
 }
-function cerrarPrecio(){ $('pc').classList.remove('on'); PRECIO=null; }
+function cerrarPrecio(){ $('pc').classList.remove('on'); PRECIO=null; PRECIOF=null; }
 function guardarPrecio(){
   if(!PRECIO) return;
   const may=Math.round(parseFloat($('pcm').value)), pvp=Math.round(parseFloat($('pcp').value));
@@ -3203,8 +3227,10 @@ function guardarPrecio(){
   if(!may||may<=0){ err.textContent='El precio mayorista tiene que ser mayor a cero.'; return; }
   if(!pvp||pvp<=0){ err.textContent='El PVP sugerido tiene que ser mayor a cero.'; return; }
   if(pvp<may){ err.textContent='El PVP no puede ser menor al precio mayorista.'; return; }
-  const nombre=PRECIO.nombre;
-  ponerPrecio(PRECIO,may,pvp);
+  const soloColor = PRECIOF && PRECIO.filas.length>1 && $('pcambito').value==='color';
+  const nombre = soloColor ? PRECIO.nombre+' '+PRECIOF.n : PRECIO.nombre;
+  if(soloColor) ponerPrecioFila(PRECIOF,may,pvp);
+  else ponerPrecio(PRECIO,may,pvp);
   guardar(); cerrarPrecio();
   toast('Precio actualizado · '+nombre);
   vStock();
@@ -3303,8 +3329,8 @@ function vStock(){
             </div>
           </div>
         </td>
-        <td class="n"><button class="lk" onclick="abrirPrecio('${r.m.id}')"
-          title="Editar el precio de ${esc(r.m.nombre)}">${money(pmay(r.f))}</button></td></tr>`).join('')}
+        <td class="n"><button class="lk" onclick="abrirPrecio('${r.m.id}','${esc(r.f.sku)}')"
+          title="Editar el precio de ${esc(r.m.nombre)} ${esc(r.f.n)}">${money(pmay(r.f))}</button></td></tr>`).join('')}
     </tbody></table>
     ${l.length>400?`<div class="mas">Se muestran las primeras 400 líneas. Usá el filtro para acotar.</div>`:''}
   </div>`;
