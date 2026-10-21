@@ -936,6 +936,25 @@ table.remt tfoot tr.big td{font-weight:700;font-size:18px;border-top:1px solid v
   </div>
 </div>
 
+<div id="pc" class="modal">
+  <div class="padbox" style="max-width:460px">
+    <div class="padh"><div><h3>Editar precio</h3>
+      <p><b id="pcn"></b> · se aplica a todos los colores y talles del modelo.</p></div>
+      <button class="x" onclick="cerrarPrecio()">×</button></div>
+    <div class="padb">
+      <div class="mform">
+        <div><label>Precio mayorista <span class="opt">sin IVA</span></label>
+          <input id="pcm" type="number" min="0" step="1"></div>
+        <div><label>PVP sugerido</label>
+          <input id="pcp" type="number" min="0" step="1"></div>
+      </div>
+      <div id="pcerr" style="color:var(--ember);font:400 12px/1.6 'Instrument Sans';min-height:18px;margin-top:8px"></div>
+    </div>
+    <div class="padf"><button class="und2" onclick="cerrarPrecio()">Cancelar</button>
+      <button class="add" onclick="guardarPrecio()">Guardar precio</button></div>
+  </div>
+</div>
+
 <div id="ed" class="modal">
   <div class="padbox" style="max-width:520px">
     <div class="padh"><div><h3>Editar usuario</h3>
@@ -1371,6 +1390,16 @@ CAT.forEach(m=>{
     m.filas.forEach(f=>m.talles.forEach(t=>f.stock[t]=20));
 });
 
+/* Nos guardamos el precio de lista para saber cuáles se editaron. */
+CAT.forEach(m=>{ m.may0=m.may; m.pvp0=m.pvp; });
+
+/* El precio vive en el modelo y también copiado en cada fila: hay que
+   cambiarlo en los dos lados para que el catálogo y el carrito coincidan. */
+function ponerPrecio(m,may,pvp){
+  m.may=may; m.pvp=pvp;
+  m.filas.forEach(f=>{ f.may=may; f.pvp=pvp; });
+}
+
 const idx={}; CAT.forEach(m=>m.filas.forEach(f=>idx[f.sku]={m,f}));
 
 /* Código de una línea de stock. Cuando el modelo tiene un solo talle
@@ -1633,7 +1662,11 @@ function snapshot(){
       filas:m.filas.map(f=>({n:f.n,sku:f.sku,img:f.img,imgs:f.imgs||[]}))});
     m.filas.forEach(f=>m.talles.forEach(t=>{ stock[f.sku+'|'+t]=f.stock[t]; }));
   });
-  return {v:1, ts:new Date().toISOString(), pedidos:PED, promos:PROMOS, stock, extra};
+  /* Precios editados a mano. Solo guardamos los que cambiaron respecto
+     de la lista original, así el archivo no se llena de repetidos. */
+  const precios={};
+  CAT.forEach(m=>{ if(m.may!==m.may0 || m.pvp!==m.pvp0) precios[m.id]={may:m.may,pvp:m.pvp}; });
+  return {v:1, ts:new Date().toISOString(), pedidos:PED, promos:PROMOS, stock, extra, precios};
 }
 function aplicar(d){
   if(!d) return;
@@ -1646,6 +1679,8 @@ function aplicar(d){
   });
   if(d.stock) for(const k in d.stock){ const [sku,t]=k.split('|'); const r=idx[sku];
     if(r && r.f.stock[t]!==undefined) r.f.stock[t]=d.stock[k]; }
+  if(d.precios) for(const id in d.precios){ const m=CAT.find(x=>x.id===id);
+    if(m) ponerPrecio(m, d.precios[id].may, d.precios[id].pvp); }
   if(Array.isArray(d.pedidos)) PED=d.pedidos;
   if(Array.isArray(d.promos)) PROMOS=d.promos;
   SYNC.ts=d.ts||null;
@@ -3147,6 +3182,34 @@ function vEntrantes(){
 }
 let fStkPanel='', fStkCat='', fStkCol='', fStkEst='', oStk='modelo';
 function limpiarStk(){ fStkPanel=fStkCat=fStkCol=fStkEst=''; vStock(); }
+
+/* ── Editar el precio de un modelo ────────────────────────────────
+   El precio es del modelo, no de cada color, así que al cambiarlo se
+   actualizan todas sus líneas de una. */
+let PRECIO=null;
+function abrirPrecio(id){
+  const m=CAT.find(x=>x.id===id); if(!m) return;
+  PRECIO=m;
+  $('pcn').textContent=m.nombre;
+  $('pcm').value=m.may; $('pcp').value=m.pvp;
+  $('pcerr').textContent='';
+  $('pc').classList.add('on'); setTimeout(()=>{$('pcm').focus(); $('pcm').select();},50);
+}
+function cerrarPrecio(){ $('pc').classList.remove('on'); PRECIO=null; }
+function guardarPrecio(){
+  if(!PRECIO) return;
+  const may=Math.round(parseFloat($('pcm').value)), pvp=Math.round(parseFloat($('pcp').value));
+  const err=$('pcerr'); err.textContent='';
+  if(!may||may<=0){ err.textContent='El precio mayorista tiene que ser mayor a cero.'; return; }
+  if(!pvp||pvp<=0){ err.textContent='El PVP sugerido tiene que ser mayor a cero.'; return; }
+  if(pvp<may){ err.textContent='El PVP no puede ser menor al precio mayorista.'; return; }
+  const nombre=PRECIO.nombre;
+  ponerPrecio(PRECIO,may,pvp);
+  guardar(); cerrarPrecio();
+  toast('Precio actualizado · '+nombre);
+  vStock();
+}
+
 function vStock(){
   const rows=[];
   CAT.forEach(m=>m.filas.forEach(f=>m.talles.forEach(t=>
@@ -3240,7 +3303,8 @@ function vStock(){
             </div>
           </div>
         </td>
-        <td class="n">${money(pmay(r.f))}</td></tr>`).join('')}
+        <td class="n"><button class="lk" onclick="abrirPrecio('${r.m.id}')"
+          title="Editar el precio de ${esc(r.m.nombre)}">${money(pmay(r.f))}</button></td></tr>`).join('')}
     </tbody></table>
     ${l.length>400?`<div class="mas">Se muestran las primeras 400 líneas. Usá el filtro para acotar.</div>`:''}
   </div>`;
