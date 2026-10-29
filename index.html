@@ -1675,7 +1675,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-10-29e';
+const VERSION='2026-10-30a';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
@@ -1702,7 +1702,9 @@ function snapshot(){
     m.filas.forEach(f=>{ if(f.may!==m.may || f.pvp!==m.pvp)
       preciosSku[f.sku]={may:f.may,pvp:f.pvp}; });
   });
-  return {v:1, ts:new Date().toISOString(), pedidos:PED, promos:PROMOS, stock, extra, precios, preciosSku, borrados:BORRADOS};
+  /* Los pedidos ya NO viajan acá: cada uno vive en su propio registro.
+     Así ninguna pantalla puede pisarlos al guardar stock o precios. */
+  return {v:1, ts:new Date().toISOString(), promos:PROMOS, stock, extra, precios, preciosSku, borrados:BORRADOS};
 }
 function aplicar(d){
   if(!d) return;
@@ -1724,9 +1726,18 @@ function aplicar(d){
   /* los productos dados de baja se sacan del catálogo que se ve */
   BORRADOS = Array.isArray(d.borrados) ? d.borrados.slice() : [];
   sacarDelCatalogo();
-  if(Array.isArray(d.pedidos)) PED=d.pedidos;
+  /* Los pedidos ya no vienen acá: viven en su propia colección. Solo los
+     tomamos si el documento es viejo y la lista todavía está vacía, para
+     no quedarnos sin nada la primera vez. */
+  if(Array.isArray(d.pedidos) && !PED.length) PED=d.pedidos;
   if(Array.isArray(d.promos)) PROMOS=d.promos;
   SYNC.ts=d.ts||null;
+}
+
+/* Después de cargar el estado, los pedidos se traen aparte. */
+async function cargarTodo(){
+  await cargar();
+  await traerPedidos();
 }
 
 /* ── guardar (con espera, para no escribir en cada tecla) ── */
@@ -2076,7 +2087,7 @@ async function abrir(){
   $('who').textContent=S.n; $('sub').textContent=S.s;
   $('syncw').style.display=S.rol==='admin'?'flex':'none';
   nav(); ir(S.rol==='admin'?'entrantes':'catalogo');
-  await cargar();
+  await cargarTodo();
   if(S.rol!=='admin') cargarCart();
   ir(tab);
 }
@@ -2633,6 +2644,86 @@ async function avisarPedido(p){
   }catch(e){ /* el pedido ya está cargado; el aviso es adicional */ }
 }
 
+
+/* ═══════════ PEDIDOS: UN REGISTRO POR PEDIDO ═══════════
+   Antes todos los pedidos vivían dentro de un único documento junto con
+   el stock y los precios. Cualquier pantalla que guardara reescribía esa
+   lista entera, así que una pestaña con datos viejos borraba los pedidos
+   que habían entrado mientras tanto. Era la causa de fondo.
+
+   Ahora cada pedido es su propio registro en la colección "pedidos".
+   Escribir uno no toca a los demás: ninguna pestaña, por vieja que esté,
+   puede hacer desaparecer un pedido ajeno. */
+const colURL=()=>`https://firestore.googleapis.com/v1/projects/${encodeURIComponent(CFG.pid)}`
+  +`/databases/(default)/documents/pedidos`;
+const pedURL=id=>colURL()+'/'+encodeURIComponent(id);
+
+/* Identificador propio y estable de cada pedido. */
+function idPed(p){
+  if(p.id) return p.id;
+  p.id = 'p'+(p.n||0)+'-'+(p.f||'').replace(/-/g,'')+'-'+Math.random().toString(36).slice(2,7);
+  return p.id;
+}
+
+async function leerPedidos(){
+  if(!conectado()) return null;
+  try{
+    const h=await conCabecera(); if(!h) return null;
+    const out=[]; let tok='';
+    do{
+      const r=await fetch(colURL()+'?pageSize=300'+(tok?'&pageToken='+tok:''),{headers:h,cache:'no-store'});
+      if(!r.ok) return null;
+      const j=await r.json();
+      (j.documents||[]).forEach(d=>{
+        const raw=d.fields&&d.fields.data&&d.fields.data.stringValue;
+        if(raw){ try{ out.push(JSON.parse(raw)); }catch(e){} }
+      });
+      tok=j.nextPageToken||'';
+    }while(tok);
+    return out.sort((a,b)=>(b.n||0)-(a.n||0));
+  }catch(e){ return null; }
+}
+
+/* Guarda UN pedido. Devuelve si pudo, y por qué no. */
+async function escribirPedido(p){
+  if(!conectado()) return {ok:true};
+  try{
+    const h=await conCabecera(); if(!h) return {ok:false, causa:'tu sesión venció'};
+    const r=await fetch(pedURL(idPed(p)),{method:'PATCH',
+      headers:{...h,'Content-Type':'application/json'},
+      body:JSON.stringify({fields:{data:{stringValue:JSON.stringify(p)},v:{integerValue:2}}})});
+    if(r.ok) return {ok:true};
+    if(r.status===401||r.status===403) return {ok:false, causa:'la base rechazó el permiso'};
+    return {ok:false, causa:'la base respondió '+r.status};
+  }catch(e){
+    return {ok:false, causa:/fetch|network|Failed/i.test(String(e))?'no hay internet':String(e.message||e)};
+  }
+}
+
+/* Refresca la lista de pedidos desde la colección. */
+async function traerPedidos(){
+  const l=await leerPedidos();
+  if(!l) return false;
+  PED.length=0; l.forEach(p=>PED.push(p));
+  return true;
+}
+
+/* Guarda un pedido y confirma releyéndolo. Reintenta. */
+async function guardarUno(p){
+  let causa='no pudimos guardar';
+  for(let i=0;i<3;i++){
+    const r=await escribirPedido(p);
+    if(r.ok){
+      if(!conectado()) return {ok:true};
+      const l=await leerPedidos();
+      if(l && l.some(x=>x.id===p.id)) return {ok:true};
+      causa='el pedido no quedó registrado en la base';
+    } else causa=r.causa;
+    await new Promise(x=>setTimeout(x,900*(i+1)));
+  }
+  return {ok:false, causa};
+}
+
 let ENVIANDO=false;
 async function enviar(){
   if(ENVIANDO) return;                 /* doble clic no manda dos veces */
@@ -2650,7 +2741,7 @@ async function enviar(){
     toast('Enviando el pedido…');
 
     /* 1. ponernos al día con la nube antes de numerar */
-    const alDia=await traerRemoto();
+    const alDia=await traerPedidos();
     if(!alDia && conectado()){
       falloPedido('no pudimos leer la base'+(SYNC.causa?' ('+SYNC.causa+')':''),
         'Tu pedido sigue cargado. Revisá tu conexión y probá de nuevo.');
@@ -2661,10 +2752,11 @@ async function enviar(){
     const nuevo={n:num,f:new Date().toISOString().slice(0,10),e:'pendiente',t:t.total,u:t.u,
       cli:CLI.razon, cuit:CLI.cuit, uid:SES?SES.uid:null,
       items:carrito, notas};
+    idPed(nuevo);
     PED.unshift(nuevo);
 
-    /* 2. guardar, releer y confirmar que el pedido está en la base */
-    const res=await guardarPedido(num);
+    /* 2. guardar SOLO este pedido, releer y confirmar */
+    const res=await guardarUno(nuevo);
     if(!res.ok){
       PED.shift();
       falloPedido(res.causa, 'Tu pedido sigue cargado. Probá de nuevo en un momento.');
@@ -3040,7 +3132,7 @@ function descontarStock(p){
 function aceptarPedido(n){
   const p=PED.find(x=>x.n===n); if(!p||p.e!=='pendiente') return;
   p.e='aceptado'; p.aceptado=hoy(); descontarStock(p);
-  toast('Pedido #'+n+' aceptado'); guardar(); guardar(); guardar(); guardar(); guardar(); refrescarAdmin();
+  toast('Pedido #'+n+' aceptado'); guardarUno(p); guardar(); guardar(); guardar(); guardar(); guardar(); refrescarAdmin();
 }
 let RCH=null;
 function abrirRechazo(n){ RCH=n; $('rcm').value=''; $('rc').classList.add('on');
@@ -3049,7 +3141,7 @@ function cerrarRechazo(){ $('rc').classList.remove('on'); RCH=null; }
 function confirmarRechazo(){
   const p=PED.find(x=>x.n===RCH), m=$('rcm').value.trim();
   if(!m){ toast('Escribí el motivo del rechazo'); $('rcm').focus(); return; }
-  p.e='rechazado'; p.motivo=m; p.rechazado=hoy();
+  p.e='rechazado'; p.motivo=m; p.rechazado=hoy(); guardarUno(p);
   cerrarRechazo(); toast('Pedido #'+p.n+' rechazado'); guardar(); guardar(); guardar(); guardar(); guardar(); refrescarAdmin();
 }
 let FAC=null;
@@ -3114,6 +3206,7 @@ async function guardarFactura(){
   if(FACPDF && !conPdf) toast('No se pudo guardar el PDF; la factura se carga igual');
   FAC.fac={nro,fecha:$('fcf').value,importe:imp,pdf:conPdf};
   if(FAC.e==='aceptado') FAC.e='facturado';
+  guardarUno(FAC);
   const n=FAC.n; cerrarFactura();
   toast('Factura '+nro+' cargada en el pedido #'+n); guardar(); guardar(); guardar(); guardar(); guardar(); refrescarAdmin();
 }
@@ -3130,11 +3223,11 @@ function guardarEnvio(){
   const tr=$('evt').value.trim();
   if(!tr){ toast('Poné el transporte'); $('evt').focus(); return; }
   DES.env={transporte:tr,guia:$('evg').value.trim(),fecha:$('evf').value};
-  DES.e='enviado'; const n=DES.n; cerrarEnvio();
+  DES.e='enviado'; guardarUno(DES); const n=DES.n; cerrarEnvio();
   toast('Pedido #'+n+' marcado como enviado'); guardar(); guardar(); guardar(); guardar(); guardar(); refrescarAdmin();
 }
 function terminarPedido(n){
-  const p=PED.find(x=>x.n===n); p.e='terminado'; p.terminado=hoy();
+  const p=PED.find(x=>x.n===n); p.e='terminado'; p.terminado=hoy(); guardarUno(p);
   toast('Pedido #'+n+' terminado'); guardar(); guardar(); guardar(); guardar(); guardar(); refrescarAdmin();
 }
 function accionesPedido(p,clase){
