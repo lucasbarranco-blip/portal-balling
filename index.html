@@ -1711,15 +1711,34 @@ function guardar(){
 async function guardarYa(){
   const d=snapshot();
   try{ localStorage.setItem(LS+'-data',JSON.stringify(d)); }catch(e){}
-  if(!conectado()){ SYNC.ts=d.ts; pintarSync('local'); return; }
+  /* sin base configurada el guardado local es el único que hay, y vale */
+  if(!conectado()){ SYNC.ts=d.ts; pintarSync('local'); return true; }
   try{
     const h=await conCabecera(); if(!h) throw new Error('sin sesión');
     const r=await fetch(docURL(),{method:'PATCH',
       headers:{...h,'Content-Type':'application/json'},
       body:JSON.stringify({fields:{data:{stringValue:JSON.stringify(d)}}})});
     if(!r.ok) throw new Error(await r.text());
-    SYNC.ts=d.ts; pintarSync('ok');
-  }catch(e){ pintarSync('error'); }
+    SYNC.ts=d.ts; pintarSync('ok'); return true;
+  }catch(e){ pintarSync('error'); return false; }
+}
+
+/* Trae el estado de la nube y lo aplica. Lo usamos antes de mandar un
+   pedido: si esta pestaña quedó abierta horas, su lista de pedidos está
+   vieja, y sin esto el número saldría repetido y el guardado borraría
+   los pedidos que entraron mientras tanto. */
+async function traerRemoto(){
+  if(!conectado()) return false;
+  try{
+    const h=await conCabecera(); if(!h) return false;
+    const r=await fetch(docURL(),{headers:h,cache:'no-store'});
+    if(!r.ok) return false;
+    const j=await r.json();
+    const raw=j.fields&&j.fields.data&&j.fields.data.stringValue;
+    if(!raw) return false;
+    aplicar(JSON.parse(raw));
+    return true;
+  }catch(e){ return false; }
 }
 async function cargar(){
   let local=null;
@@ -2483,18 +2502,38 @@ async function avisarPedido(p){
   }catch(e){ /* el pedido ya está cargado; el aviso es adicional */ }
 }
 
+let ENVIANDO=false;
 async function enviar(){
+  if(ENVIANDO) return;                 /* doble clic no manda dos veces */
   const t=totales(); if(!t.u) return;
-  const items=Object.keys(cart).map(k=>{const{m,f,t:tl}=find(k);
-    return{sku:f.sku+'-'+tl,desc:`${m.nombre} ${f.n} ${tl}`,cant:cart[k],precio:pmay(f),sub:cart[k]*pmay(f)};});
-  /* si todavía no hay pedidos arrancamos en 1001 */
-  const num = PED.length ? Math.max(...PED.map(p=>p.n))+1 : 1001;
-  PED.unshift({n:num,f:new Date().toISOString().slice(0,10),e:'pendiente',t:t.total,u:t.u,
-    cli:CLI.razon, cuit:CLI.cuit, uid:SES?SES.uid:null,
-    items:{...cart},notas:$('notas')?.value||''});
-  cart={}; draft={}; olvidarCart(); guardar();
-  avisarPedido(PED[0]);
-  toast('Pedido #'+num+' enviado'); nav(); ir('historial');
+  ENVIANDO=true;
+  const carrito={...cart}, notas=$('notas')?.value||'';
+  toast('Enviando el pedido…');
+  try{
+    /* 1. ponernos al día con la nube antes de numerar */
+    await traerRemoto();
+    const num = PED.length ? Math.max(...PED.map(p=>p.n||0))+1 : 1001;
+    const nuevo={n:num,f:new Date().toISOString().slice(0,10),e:'pendiente',t:t.total,u:t.u,
+      cli:CLI.razon, cuit:CLI.cuit, uid:SES?SES.uid:null,
+      items:carrito, notas};
+    PED.unshift(nuevo);
+
+    /* 2. guardar y confirmar que quedó. Si falla, el pedido no existe:
+          mejor avisarlo que dejar al mayorista creyendo que lo mandó. */
+    const ok=await guardarYa();
+    if(!ok){
+      PED.shift();
+      toast('No pudimos registrar el pedido. Revisá tu conexión y probá de nuevo.');
+      return;
+    }
+
+    /* 3. recién con el pedido guardado mandamos el aviso */
+    cart={}; draft={}; olvidarCart();
+    avisarPedido(nuevo);
+    toast('Pedido #'+num+' enviado'); nav(); ir('historial');
+  }catch(e){
+    toast('No pudimos registrar el pedido. Probá de nuevo.');
+  }finally{ ENVIANDO=false; }
 }
 
 /* ═══ historial ═══ */
