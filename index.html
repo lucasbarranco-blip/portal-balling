@@ -1130,7 +1130,7 @@ const CAT=[
 /* ══════════ PALOS · BLOOM (edición limitada) ══════════
    Bloom no figura en la lista de agosto; se toma el precio del
    escalón Power 97 hasta que el representante confirme el suyo. */
-{id:"bl97",ent:"Inmediato",cat:"palos",col:"Bloom",nombre:"Bloom 97",comp:"97% Carbon",talles:T2,may:269000,pvp:564900,
+{id:"bl97",ent:"Inmediato",cat:"palos",col:"Bloom",nombre:"Bloom 97",comp:"97% Carbon",talles:T375,may:269000,pvp:564900,
  filas:[
   {n:"Lowbow Marigold",sku:"SBB97LB-MAR",img:B+"ball-bloom-power-97-lowbow-marigold-1.jpg"},
   {n:"Lowbow Speedwell",sku:"SBB97LB-SPE",img:B+"ball-bloom-power-97-lowbow-speedwell-1.jpg"},
@@ -1407,6 +1407,15 @@ CAT.forEach(m=>{
 
 /* Nos guardamos el precio de lista para saber cuáles se editaron. */
 CAT.forEach(m=>{ m.may0=m.may; m.pvp0=m.pvp; });
+const CATFULL=CAT.slice();
+let BORRADOS=[];
+/* CAT es el mismo arreglo de siempre —hay código que lo referencia— así
+   que no lo reemplazamos: le sacamos y le devolvemos elementos. */
+function sacarDelCatalogo(){
+  const vivos=CATFULL.concat(CAT.filter(m=>m.nuevo && !CATFULL.includes(m)))
+    .filter(m=>!BORRADOS.includes(m.id));
+  CAT.length=0; vivos.forEach(m=>CAT.push(m));
+}
 
 /* El precio vive en el modelo y también copiado en cada fila. Cambiar el
    del modelo arrastra a todas sus filas; cambiar el de una fila toca solo
@@ -1665,7 +1674,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-10-29a';
+const VERSION='2026-10-29b';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
@@ -1692,7 +1701,7 @@ function snapshot(){
     m.filas.forEach(f=>{ if(f.may!==m.may || f.pvp!==m.pvp)
       preciosSku[f.sku]={may:f.may,pvp:f.pvp}; });
   });
-  return {v:1, ts:new Date().toISOString(), pedidos:PED, promos:PROMOS, stock, extra, precios, preciosSku};
+  return {v:1, ts:new Date().toISOString(), pedidos:PED, promos:PROMOS, stock, extra, precios, preciosSku, borrados:BORRADOS};
 }
 function aplicar(d){
   if(!d) return;
@@ -1711,6 +1720,9 @@ function aplicar(d){
     if(m) ponerPrecio(m, d.precios[id].may, d.precios[id].pvp); }
   if(d.preciosSku) for(const sku in d.preciosSku){ const r=idx[sku];
     if(r) ponerPrecioFila(r.f, d.preciosSku[sku].may, d.preciosSku[sku].pvp); }
+  /* los productos dados de baja se sacan del catálogo que se ve */
+  BORRADOS = Array.isArray(d.borrados) ? d.borrados.slice() : [];
+  sacarDelCatalogo();
   if(Array.isArray(d.pedidos)) PED=d.pedidos;
   if(Array.isArray(d.promos)) PROMOS=d.promos;
   SYNC.ts=d.ts||null;
@@ -2317,27 +2329,38 @@ function accion(m){
     <div class="ms" id="ms-${m.id}"><b>${u}</b> unidades · <b>${money(netoGrilla(m))}</b> neto${ya?` · ${ya} ya en el pedido`:''}</div>
     <div class="sp2">
       ${ya?`<button class="und" onclick="quitarMod('${m.id}')">Quitar del pedido</button>`:''}
-      <button class="add" id="ad-${m.id}" onclick="commit('${m.id}')" ${u?'':'disabled'}>${ya?'Actualizar pedido':'Agregar al pedido'}</button>
+      <button class="add" id="ad-${m.id}" onclick="commit('${m.id}')" ${u?'':'disabled'}>${ya?'Ver mi pedido':'Agregar al pedido'}</button>
     </div></div>`;
 }
 function ab(id){ $('md-'+id).classList.toggle('open'); }
 
 function paso(k,d){
   const {f,t}=find(k);
-  let n=val(k)+d; if(n<0)n=0; if(n>f.stock[t])n=f.stock[t];
+  let n=val(k)+d; if(n<0)n=0;
+  if(n>f.stock[t]){ n=f.stock[t]; const {m}=find(k); topeStock(m,f,t); }
   draft[k]=n;
   const box=$('sp-'+k), inp=box.querySelector('input');
   inp.value=n||''; refrescar(k); enLista(k);
 }
 function setq(k,el){
-  const {f,t}=find(k); let n=parseInt(el.value||0,10); if(isNaN(n)||n<0)n=0;
-  if(n>f.stock[t]){n=f.stock[t];el.value=n;}
+  const {m,f,t}=find(k); let n=parseInt(el.value||0,10); if(isNaN(n)||n<0)n=0;
+  if(n>f.stock[t]){ n=f.stock[t]; el.value=n; topeStock(m,f,t); }
   draft[k]=n; refrescar(k); enLista(k);
 }
-/* En la lista corrida no hay botón "Agregar": lo que se tipea entra
-   directo al pedido. */
+
+/* Si el número no se mueve, el mayorista tiene que entender por qué. */
+let TOPE=0;
+function topeStock(m,f,t){
+  const s=f.stock[t]||0;
+  const ahora=Date.now(); if(ahora-TOPE<1200) return; TOPE=ahora;
+  const q=m.talles.length>1? ' en talle '+t : '';
+  toast(s===0 ? `${m.nombre} ${f.n}${q}: sin stock por ahora`
+              : `${m.nombre} ${f.n}${q}: quedan ${s} unidades`);
+}
+/* Lo que se tipea entra al pedido solo, en las fichas igual que en la
+   lista. Antes, en las fichas, había que tocar "Agregar" y si el
+   mayorista se iba de la pantalla perdía lo cargado. */
 function enLista(k){
-  if(vista!=='lista') return;
   const n=draft[k]||0;
   if(n>0) cart[k]=n; else delete cart[k];
   delete draft[k];
@@ -3338,6 +3361,26 @@ function limpiarStk(){ fStkPanel=fStkCat=fStkCol=fStkEst=''; vStock(); }
    El precio es del modelo, no de cada color, así que al cambiarlo se
    actualizan todas sus líneas de una. */
 let PRECIO=null, PRECIOF=null;
+
+/* ── Borrar un producto del catálogo ──────────────────────────────
+   Guardamos los id borrados en el estado, así la baja viaja a la nube y
+   vale para todos. No se borra la línea del código: si mañana vuelve a
+   entrar, se saca de esta lista y reaparece con su historial intacto. */
+function borrarProducto(id){
+  const m=CAT.find(x=>x.id===id); if(!m) return;
+  const enPedidos=PED.filter(p=>Object.keys(p.items||{})
+    .some(k=>m.filas.some(f=>k.startsWith(f.sku+'|')))).length;
+  const aviso='Se saca "'+m.nombre+'" del catálogo.\n\n'+
+    (enPedidos?('Aparece en '+enPedidos+' pedido'+(enPedidos>1?'s':'')+
+      ', que no se tocan: siguen mostrando lo que se pidió.\n\n'):'')+
+    'Podés volver a darlo de alta cuando quieras. ¿Seguimos?';
+  if(!confirm(aviso)) return;
+  BORRADOS.push(id);
+  sacarDelCatalogo();
+  guardar(); toast(m.nombre+' salió del catálogo');
+  vStock();
+}
+
 function abrirPrecio(id,sku){
   const m=CAT.find(x=>x.id===id); if(!m) return;
   PRECIO=m; PRECIOF=sku?m.filas.find(f=>f.sku===sku):null;
@@ -3442,7 +3485,7 @@ function vStock(){
   <div class="panel" style="max-height:62vh;overflow:auto">
     <table><thead><tr><th>SKU</th><th>Modelo</th><th>Colorway</th><th>Talle</th>
       <th class="n">Stock</th><th style="width:210px">Ajustar</th>
-      <th class="n">Mayorista</th></tr></thead><tbody>
+      <th class="n">Mayorista</th><th></th></tr></thead><tbody>
       ${(STKROWS=l.slice(0,400)).map((r,i)=>`<tr id="sr-${i}">
         <td class="m" style="font-weight:600">${r.cod}${r.m.nuevo?'<span class="nvo">nuevo</span>':''}</td><td>${r.m.nombre}</td>
         <td>${r.f.n}</td><td class="m">${r.t}</td>
@@ -3465,7 +3508,9 @@ function vStock(){
           </div>
         </td>
         <td class="n"><button class="lk" onclick="abrirPrecio('${r.m.id}','${esc(r.f.sku)}')"
-          title="Editar el precio de ${esc(r.m.nombre)} ${esc(r.f.n)}">${money(pmay(r.f))}</button></td></tr>`).join('')}
+          title="Editar el precio de ${esc(r.m.nombre)} ${esc(r.f.n)}">${money(pmay(r.f))}</button></td>
+        <td class="acc"><button class="mini no" onclick="borrarProducto('${r.m.id}')"
+          title="Sacar ${esc(r.m.nombre)} del catálogo">Borrar</button></td></tr>`).join('')}
     </tbody></table>
     ${l.length>400?`<div class="mas">Se muestran las primeras 400 líneas. Usá el filtro para acotar.</div>`:''}
   </div>`;
