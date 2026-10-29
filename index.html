@@ -467,6 +467,16 @@ tfoot td.l{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:up
 
 
 
+.errped{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:92px;z-index:60;
+  max-width:min(620px,94vw);background:#FDF2EE;border:1px solid var(--ember);border-radius:12px;
+  padding:14px 42px 14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.14)}
+.errped.on{display:block}
+.errped b{display:block;font:600 13.5px 'Instrument Sans';color:var(--ember);margin-bottom:3px}
+.errped span{display:block;font:400 12.5px/1.65 'Instrument Sans';color:var(--ink)}
+.errped button.und2{margin-top:10px}
+.errped button.x{position:absolute;top:8px;right:10px;border:0;background:none;
+  font-size:17px;line-height:1;color:var(--mute);cursor:pointer}
+
 /* ═══ desglose del pedido ═══ */
 tr.pr{cursor:pointer}
 tr.pr:hover,tr.pr.on{background:var(--paper)}
@@ -1060,6 +1070,7 @@ table.remt tfoot tr.big td{font-weight:700;font-size:18px;border-top:1px solid v
     </div>
   </div>
 </div>
+<div id="errped" class="errped"></div>
 <div id="toast"></div>
 
 <script>
@@ -1652,7 +1663,10 @@ const FIREBASE = {
   key: "AIzaSyBKhoFXoxSpO67asftH4z00eKf2bdr60Do"
 };
 
-let CFG=null, SYNC={estado:'local', ts:null, cola:null};
+/* Versión del portal. El archivo v.txt del servidor tiene este mismo
+   valor: si no coinciden, esta pestaña está corriendo código viejo. */
+const VERSION='2026-10-29a';
+let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
 if(!CFG && FIREBASE.pid && FIREBASE.key) CFG={pid:FIREBASE.pid, key:FIREBASE.key};
@@ -1714,13 +1728,67 @@ async function guardarYa(){
   /* sin base configurada el guardado local es el único que hay, y vale */
   if(!conectado()){ SYNC.ts=d.ts; pintarSync('local'); return true; }
   try{
-    const h=await conCabecera(); if(!h) throw new Error('sin sesión');
+    const h=await conCabecera(); if(!h) throw new Error('tu sesión venció');
     const r=await fetch(docURL(),{method:'PATCH',
       headers:{...h,'Content-Type':'application/json'},
       body:JSON.stringify({fields:{data:{stringValue:JSON.stringify(d)}}})});
-    if(!r.ok) throw new Error(await r.text());
-    SYNC.ts=d.ts; pintarSync('ok'); return true;
-  }catch(e){ pintarSync('error'); return false; }
+    if(!r.ok){
+      const txt=await r.text();
+      if(r.status===401||r.status===403) throw new Error('la base rechazó el permiso');
+      throw new Error('la base respondió '+r.status+(txt?': '+txt.slice(0,90):''));
+    }
+    SYNC.ts=d.ts; pintarSync('ok'); SYNC.causa=''; return true;
+  }catch(e){
+    pintarSync('error');
+    SYNC.causa = /fetch|network|Failed/i.test(String(e)) ? 'no hay internet' : String(e.message||e);
+    return false;
+  }
+}
+
+/* Lee el estado de la nube sin aplicarlo. Lo usamos para confirmar que
+   un pedido quedó realmente escrito antes de dar por buena la operación. */
+async function leerRemoto(){
+  if(!conectado()) return null;
+  try{
+    const h=await conCabecera(); if(!h) return null;
+    const r=await fetch(docURL(),{headers:h,cache:'no-store'});
+    if(!r.ok) return null;
+    const j=await r.json();
+    const raw=j.fields&&j.fields.data&&j.fields.data.stringValue;
+    return raw?JSON.parse(raw):null;
+  }catch(e){ return null; }
+}
+
+/* Guarda y después RELEE para comprobar que el pedido está. Reintenta un
+   par de veces. Si no lo logra devuelve el motivo, para poder decírselo
+   al mayorista en vez de dejarlo creyendo que mandó algo que no existe. */
+async function guardarPedido(num){
+  let causa='no pudimos guardar';
+  for(let i=0;i<3;i++){
+    const ok=await guardarYa();
+    if(ok){
+      if(!conectado()) return {ok:true};
+      const remoto=await leerRemoto();
+      if(remoto && (remoto.pedidos||[]).some(p=>p.n===num)) return {ok:true};
+      causa='el pedido no quedó registrado en la base';
+    }else{
+      causa=SYNC.causa||'no pudimos guardar';
+    }
+    await new Promise(r=>setTimeout(r,900*(i+1)));
+  }
+  return {ok:false, causa};
+}
+
+/* Si esta pestaña quedó abierta y mientras tanto se publicó una versión
+   nueva del portal, seguir usándola es justo lo que hacía perder pedidos.
+   Antes de enviar comparamos contra el archivo de versión del servidor. */
+async function versionVieja(){
+  try{
+    const r=await fetch('v.txt?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok) return false;
+    const v=(await r.text()).trim();
+    return !!v && v!==VERSION;
+  }catch(e){ return false; }
 }
 
 /* Trae el estado de la nube y lo aplica. Lo usamos antes de mandar un
@@ -2508,33 +2576,61 @@ async function enviar(){
   const t=totales(); if(!t.u) return;
   ENVIANDO=true;
   const carrito={...cart}, notas=$('notas')?.value||'';
-  toast('Enviando el pedido…');
   try{
+    /* 0. ¿esta pestaña está corriendo una versión vieja del portal? */
+    if(await versionVieja()){
+      falloPedido('el portal se actualizó y esta pestaña quedó vieja',
+        'Tu pedido sigue cargado. Recargá la página y volvé a enviarlo.', true);
+      return;
+    }
+
+    toast('Enviando el pedido…');
+
     /* 1. ponernos al día con la nube antes de numerar */
-    await traerRemoto();
+    const alDia=await traerRemoto();
+    if(!alDia && conectado()){
+      falloPedido('no pudimos leer la base'+(SYNC.causa?' ('+SYNC.causa+')':''),
+        'Tu pedido sigue cargado. Revisá tu conexión y probá de nuevo.');
+      return;
+    }
+
     const num = PED.length ? Math.max(...PED.map(p=>p.n||0))+1 : 1001;
     const nuevo={n:num,f:new Date().toISOString().slice(0,10),e:'pendiente',t:t.total,u:t.u,
       cli:CLI.razon, cuit:CLI.cuit, uid:SES?SES.uid:null,
       items:carrito, notas};
     PED.unshift(nuevo);
 
-    /* 2. guardar y confirmar que quedó. Si falla, el pedido no existe:
-          mejor avisarlo que dejar al mayorista creyendo que lo mandó. */
-    const ok=await guardarYa();
-    if(!ok){
+    /* 2. guardar, releer y confirmar que el pedido está en la base */
+    const res=await guardarPedido(num);
+    if(!res.ok){
       PED.shift();
-      toast('No pudimos registrar el pedido. Revisá tu conexión y probá de nuevo.');
+      falloPedido(res.causa, 'Tu pedido sigue cargado. Probá de nuevo en un momento.');
       return;
     }
 
-    /* 3. recién con el pedido guardado mandamos el aviso */
+    /* 3. recién con el pedido confirmado mandamos el aviso */
     cart={}; draft={}; olvidarCart();
     avisarPedido(nuevo);
     toast('Pedido #'+num+' enviado'); nav(); ir('historial');
   }catch(e){
-    toast('No pudimos registrar el pedido. Probá de nuevo.');
+    falloPedido(String(e&&e.message||e), 'Tu pedido sigue cargado. Probá de nuevo.');
   }finally{ ENVIANDO=false; }
 }
+
+/* Un cartel que no se va solo: si el pedido no entró, el mayorista tiene
+   que enterarse y saber por qué. Un toast de tres segundos no alcanza. */
+function falloPedido(causa, queHacer, recargar){
+  const c=$('errped');
+  if(c){
+    c.innerHTML=`<b>No pudimos registrar tu pedido.</b>
+      <span>Motivo: ${esc(causa||'desconocido')}. ${esc(queHacer||'')}</span>
+      ${recargar?`<button class="und2" onclick="location.reload()">Recargar ahora</button>`:''}
+      <button class="x" onclick="this.parentNode.classList.remove('on')">×</button>`;
+    c.classList.add('on');
+  }
+  toast('No pudimos registrar tu pedido: '+(causa||'error'));
+}
+
 
 /* ═══ historial ═══ */
 const EST={
