@@ -1675,7 +1675,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-10-29d';
+const VERSION='2026-10-29e';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
@@ -1779,7 +1779,11 @@ async function guardarYa(){
     const h=await conCabecera(); if(!h) throw new Error('tu sesión venció');
     const r=await fetch(docURL(),{method:'PATCH',
       headers:{...h,'Content-Type':'application/json'},
-      body:JSON.stringify({fields:{data:{stringValue:JSON.stringify(d)}}})});
+      /* La marca v=2 es la llave: las reglas de la base solo aceptan
+         escrituras que la traigan. Una pestaña con el código viejo no la
+         manda, así que no puede pisar los pedidos de nadie. */
+      body:JSON.stringify({fields:{data:{stringValue:JSON.stringify(d)},
+        v:{integerValue:2}}})});
     if(!r.ok){
       const txt=await r.text();
       if(r.status===401||r.status===403) throw new Error('la base rechazó el permiso');
