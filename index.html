@@ -1675,7 +1675,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-10-29c';
+const VERSION='2026-10-29d';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
@@ -1735,7 +1735,42 @@ function guardar(){
   SYNC.cola=setTimeout(guardarYa,900);
   pintarSync('guardando');
 }
+
+/* ── Fusionar pedidos antes de escribir ───────────────────────────
+   El estado entero vive en un solo documento, así que cualquier pestaña
+   que guarde pisa lo que escribieron las demás. Si esa pestaña tenía la
+   lista vieja, los pedidos nuevos desaparecen — que es exactamente lo
+   que venía pasando. Antes de escribir releemos la nube y unimos las dos
+   listas: no se pierde ninguno y los estados solo avanzan, nunca vuelven
+   atrás. */
+const ORDEN_EST=['pendiente','aceptado','facturado','enviado','terminado','rechazado'];
+const clavePed=p=>[p.n, p.f, p.cli, p.u].join('|');
+function fusionarPedidos(remotos, locales){
+  const mapa=new Map();
+  (remotos||[]).forEach(p=>mapa.set(clavePed(p), p));
+  (locales||[]).forEach(p=>{
+    const k=clavePed(p), y=mapa.get(k);
+    if(!y){ mapa.set(k,p); return; }
+    /* el mismo pedido en los dos lados: nos quedamos con el más avanzado */
+    const a=ORDEN_EST.indexOf(y.e), b=ORDEN_EST.indexOf(p.e);
+    mapa.set(k, b>=a ? p : y);
+  });
+  return [...mapa.values()].sort((x,y)=>(y.n||0)-(x.n||0));
+}
+
+let PEDPREV=null;
+const PEDLOCAL=()=>PEDPREV||PED;
 async function guardarYa(){
+  PEDPREV=PED.slice();
+  /* releemos y fusionamos para no pisar pedidos de otras pestañas */
+  if(conectado()){
+    const remoto=await leerRemoto();
+    if(remoto){
+      PED.length=0;
+      fusionarPedidos(remoto.pedidos, JSON.parse(JSON.stringify(PEDLOCAL()))).forEach(p=>PED.push(p));
+    }
+  }
+  PEDPREV=null;
   const d=snapshot();
   try{ localStorage.setItem(LS+'-data',JSON.stringify(d)); }catch(e){}
   /* sin base configurada el guardado local es el único que hay, y vale */
