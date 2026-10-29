@@ -1151,7 +1151,8 @@ const CAT=[
   {n:"Lowbow Haze",sku:"SBA75LB",img:BAR+"Ball-Ardeeno-Control_Series_75-Lowbow_Haze-1200x1800-Slide_01-optimized.jpg"},
   {n:"Probow Jade",sku:"SBA75PB",img:BAR+"Ball-Ardeeno-Control_Series_75-Probow_Jade-1200x1800-Slide_01-optimized.jpg"},
   {n:"Ultralow Mint",sku:"SBA75UL",img:BAR+"Ball-Ardeeno-Control_Series_75-Ultralow_Mint-1200x1800-Slide_01-optimized.jpg"},
-  {n:"Ultralow Groove Sage",sku:"SBA75UG",img:BAR+"Ball-Ardeeno-Control_Series_75-Ultralow_Groove_Sage-1200x1800-Slide_01-optimized.jpg"}]},
+  {n:"Ultralow Groove Sage",sku:"SBA75UG",img:BAR+"Ball-Ardeeno-Control_Series_75-Ultralow_Groove_Sage-1200x1800-Slide_01-optimized.jpg"},
+  {n:"Latebow Opal",sku:"SBA75LT",img:B+"Ball-Ardeeno-Control_Series_75-Latebow_Opal-1200x1800-Slide_01-optimized.jpg"}]},
 
 {id:"ar55",ent:"Inmediato",cat:"palos",col:"Ardeeno",nombre:"Balance 55",comp:"55% Carbon",talles:T375,may:194250,pvp:407925,
  filas:[
@@ -1674,7 +1675,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-10-29b';
+const VERSION='2026-10-29c';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
