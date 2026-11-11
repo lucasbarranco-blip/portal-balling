@@ -1698,7 +1698,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-11-11a';
+const VERSION='2026-11-11b';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
@@ -3322,8 +3322,8 @@ function vRemito(){
       </div>
     </div>
     <div class="remdatos">
-      <div><span class="k">Cliente</span><b>${CLI.razon}</b></div>
-      <div><span class="k">CUIT</span><b class="m">${CLI.cuit}</b></div>
+      <div><span class="k">Cliente</span><b>${esc(p.cli||CLI.razon)}</b></div>
+      <div><span class="k">CUIT</span><b class="m">${esc(p.cuit||CLI.cuit||'—')}</b></div>
       <div><span class="k">Estado</span><span class="badge ${EST[p.e][0]}">${EST[p.e][1]}</span></div>
       <div><span class="k">Ítems</span><b>${ls.length} SKUs · ${un} unidades</b></div>
     </div>
@@ -3370,7 +3370,7 @@ function textoRemito(n){
   const fila=a=>a.map((v,i)=>i>=3?String(v).padStart(w[i]):String(v).padEnd(w[i])).join(' ');
   const L=['BALLING LATAM · REMITO DE PEDIDO','',
     `Pedido #${p.n}    Fecha ${fecha(p.f)}    Estado ${EST[p.e][1]}`,
-    `Cliente: ${CLI.razon}   CUIT ${CLI.cuit}`];
+    `Cliente: ${p.cli||CLI.razon}   CUIT ${p.cuit||CLI.cuit||'—'}`];
   if(p.fac) L.push(`Factura: ${p.fac.nro}  ${fecha(p.fac.fecha)}  ${money(p.fac.importe)}`);
   L.push('', fila(['SKU','NOMBRE','TALLE','CANT','TOTAL']),
     '-'.repeat(w.reduce((a,b)=>a+b,0)+4));
@@ -3388,7 +3388,9 @@ function copiarRemito(n){
 function csvRemito(n){
   const p=PED.find(x=>x.n===n), ls=lineasDe(p);
   const q=v=>`"${String(v).replace(/"/g,'""')}"`;
-  const rows=[['SKU','Nombre','Talle','Cantidad','Unitario','Total']].concat(
+  const rows=[['Pedido','#'+p.n,'Fecha',fecha(p.f)],
+    ['Cliente',p.cli||CLI.razon,'CUIT',p.cuit||CLI.cuit||''],[],
+    ['SKU','Nombre','Talle','Cantidad','Unitario','Total']].concat(
     ls.map(l=>[l.sku,l.nombre,l.talle,l.cant,l.unit,l.sub]));
   const csv='\ufeff'+rows.map(r=>r.map(q).join(';')).join('\r\n');
   const a=document.createElement('a');
@@ -4046,9 +4048,21 @@ function vCuentas(){
   $('view').innerHTML=`<div class="title"><div><div class="eb">Cobranzas</div><h1 class="wide">Cuentas</h1></div></div>
   <div class="panel"><table><thead><tr><th>Cliente</th><th>CUIT</th>
     <th class="n">Pedidos</th><th class="n">Facturado</th><th>Estado</th></tr></thead><tbody>
-    <tr><td style="font-weight:600">${CLI.razon}</td><td class="m">${CLI.cuit}</td>
-    <td class="n">${PED.length}</td><td class="n">${money(PED.reduce((a,p)=>a+p.t,0))}</td>
-    <td><span class="badge t">Activa</span></td></tr>
+    ${(()=>{
+      /* una fila por cliente real, no una sola con el representante */
+      const g={};
+      PED.forEach(p=>{
+        const k=(p.cli||'—')+'|'+(p.cuit||'');
+        g[k]=g[k]||{cli:p.cli||'—', cuit:p.cuit||'—', n:0, t:0};
+        g[k].n++; g[k].t+=p.t||0;
+      });
+      const l=Object.values(g).sort((a,b)=>b.t-a.t);
+      return l.length ? l.map(c=>`<tr>
+        <td style="font-weight:600">${esc(c.cli)}</td><td class="m">${esc(c.cuit)}</td>
+        <td class="n">${c.n}</td><td class="n">${money(c.t)}</td>
+        <td><span class="badge t">Activa</span></td></tr>`).join('')
+        : `<tr><td colspan="5" style="color:var(--mute)">Todavía no hay pedidos</td></tr>`;
+    })()}
   </tbody></table></div>`;
 }
 
