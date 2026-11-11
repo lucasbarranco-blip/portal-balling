@@ -467,6 +467,10 @@ tfoot td.l{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:up
 
 
 
+.stk.pv,.sp.pv{background:#EEF4FF;color:#2B5CE6;border:1px solid #C7D8FF;
+  border-radius:999px;padding:2px 9px;font:600 10.5px/1.6 'Instrument Sans';
+  letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+
 .errped{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:92px;z-index:60;
   max-width:min(620px,94vw);background:#FDF2EE;border:1px solid var(--ember);border-radius:12px;
   padding:14px 42px 14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.14)}
@@ -946,6 +950,24 @@ table.remt tfoot tr.big td{font-weight:700;font-size:18px;border-top:1px solid v
   </div>
 </div>
 
+<div id="sk" class="modal">
+  <div class="padbox" style="max-width:440px">
+    <div class="padh"><div><h3>Cambiar SKU</h3>
+      <p><b id="skn"></b></p></div>
+      <button class="x" onclick="cerrarSku()">×</button></div>
+    <div class="padb">
+      <div class="mform">
+        <div><label>SKU</label><input id="skv" placeholder="SBA97LB"></div>
+      </div>
+      <div id="skerr" style="color:var(--ember);font:400 12px/1.6 'Instrument Sans';min-height:18px;margin-top:8px"></div>
+      <p style="font:400 12px/1.65 'Instrument Sans';color:var(--mute);margin-top:6px">
+        Los pedidos ya hechos siguen mostrando el SKU con el que se cargaron.</p>
+    </div>
+    <div class="padf"><button class="und2" onclick="cerrarSku()">Cancelar</button>
+      <button class="add" onclick="guardarSku()">Guardar SKU</button></div>
+  </div>
+</div>
+
 <div id="pc" class="modal">
   <div class="padbox" style="max-width:460px">
     <div class="padh"><div><h3>Editar precio</h3>
@@ -1410,6 +1432,7 @@ CAT.forEach(m=>{
 CAT.forEach(m=>{ m.may0=m.may; m.pvp0=m.pvp; });
 const CATFULL=CAT.slice();
 let BORRADOS=[];
+let SKUS={};   /* sku original -> sku nuevo */
 /* CAT es el mismo arreglo de siempre —hay código que lo referencia— así
    que no lo reemplazamos: le sacamos y le devolvemos elementos. */
 function sacarDelCatalogo(){
@@ -1675,7 +1698,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-10-30a';
+const VERSION='2026-11-11a';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
@@ -1704,7 +1727,7 @@ function snapshot(){
   });
   /* Los pedidos ya NO viajan acá: cada uno vive en su propio registro.
      Así ninguna pantalla puede pisarlos al guardar stock o precios. */
-  return {v:1, ts:new Date().toISOString(), promos:PROMOS, stock, extra, precios, preciosSku, borrados:BORRADOS};
+  return {v:1, ts:new Date().toISOString(), promos:PROMOS, stock, extra, precios, preciosSku, borrados:BORRADOS, skus:SKUS};
 }
 function aplicar(d){
   if(!d) return;
@@ -1726,6 +1749,12 @@ function aplicar(d){
   /* los productos dados de baja se sacan del catálogo que se ve */
   BORRADOS = Array.isArray(d.borrados) ? d.borrados.slice() : [];
   sacarDelCatalogo();
+  /* los SKU que se renombraron a mano */
+  SKUS = (d.skus && typeof d.skus==='object') ? {...d.skus} : {};
+  Object.entries(SKUS).forEach(([viejo,nuevo])=>{
+    const r=idx[viejo]; if(!r || idx[nuevo]) return;
+    r.f.sku=nuevo; idx[nuevo]=r; delete idx[viejo];
+  });
   /* Los pedidos ya no vienen acá: viven en su propia colección. Solo los
      tomamos si el documento es viejo y la lista todavía está vacía, para
      no quedarnos sin nada la primera vez. */
@@ -2254,7 +2283,7 @@ function listaPlana(ms){
       <td class="l">${f.n}</td>
       <td class="c">${t}</td>
       <td class="l m">${f.sku}</td>
-      <td class="c">${st===0?`<span class="stk no">Sin stock</span>`:''}</td>
+      <td class="c">${porEncargo(m)?`<span class="stk pv">Pre venta</span>`:(st===0?`<span class="stk no">Sin stock</span>`:'')}</td>
       <td class="n"><span class="${pr?'pr-of':''}">${money(pmay(f))}</span></td>
       <td class="n mute">${money(f.pvp)}</td>
       <td>
@@ -2288,7 +2317,7 @@ function card(m){
         <div class="specs">
           <span class="sp k">${m.col}</span>${m.specs.map(s=>`<span class="sp">${s}</span>`).join('')}
           <span class="sp">${m.filas.length} colorway${m.filas.length>1?'s':''} · ${m.talles.length} talle${m.talles.length>1?'s':''}</span>
-          ${stk===0?'<span class="sp e">Sin stock</span>':''}
+          ${porEncargo(m)?'<span class="sp pv">Pre venta</span>':(stk===0?'<span class="sp e">Sin stock</span>':'')}
           ${pr?`<span class="promo sp-pr">−${pr.pct}%</span>`:''}
           ${q?`<span class="sp t">${q} u. en el pedido</span>`:''}
         </div>
@@ -2330,7 +2359,7 @@ function matriz(m){
         /* Al mayorista solo le decimos si hay o no hay: la cantidad
            exacta es información nuestra. */
         return `<td class="cel ${cl}">
-          <span class="aviso">${st===0?`<span class="stk no">Sin stock</span>`:''}</span>
+          <span class="aviso">${porEncargo(m)?`<span class="stk pv">Pre venta</span>`:(st===0?`<span class="stk no">Sin stock</span>`:'')}</span>
           <div class="stp ${v?'has':''}" id="sp-${esc(k)}">
             <button onclick="event.stopPropagation();paso('${esc(k)}',-1)" ${(!st||v<=0)?'disabled':''} aria-label="Restar">−</button>
             <input type="number" min="0" max="${st}" value="${v||''}" placeholder="0" ${st?'':'disabled'}
@@ -2388,14 +2417,19 @@ function ab(id){ $('md-'+id).classList.toggle('open'); }
 function paso(k,d){
   const {f,t}=find(k);
   let n=val(k)+d; if(n<0)n=0;
-  if(n>f.stock[t]){ n=f.stock[t]; const {m}=find(k); topeStock(m,f,t); }
+  const {m:mm}=find(k);
+  if(!porEncargo(mm) && n>f.stock[t]){ n=f.stock[t]; topeStock(mm,f,t); }
   draft[k]=n;
   const box=$('sp-'+k), inp=box.querySelector('input');
   inp.value=n||''; refrescar(k); enLista(k);
 }
+/* Los bolsos se venden por encargo: el mayorista pide lo que necesita y
+   la compra se hace después, así que no los limitamos por stock. */
+const porEncargo=m=>m.cat==='bolsos';
+
 function setq(k,el){
   const {m,f,t}=find(k); let n=parseInt(el.value||0,10); if(isNaN(n)||n<0)n=0;
-  if(n>f.stock[t]){ n=f.stock[t]; el.value=n; topeStock(m,f,t); }
+  if(!porEncargo(m) && n>f.stock[t]){ n=f.stock[t]; el.value=n; topeStock(m,f,t); }
   draft[k]=n; refrescar(k); enLista(k);
 }
 
@@ -2799,17 +2833,22 @@ function vHistorial(){
    <div class="sub">Duplicá cualquier pedido para volver a cargarlo, ajustado al stock de hoy.</div></div>
   ${MIOS.length?`<div class="panel"><table><thead><tr><th>Pedido</th><th>Fecha</th><th>Estado</th><th>Avance</th>
     <th class="n">Unidades</th><th class="n">Total c/IVA</th><th></th></tr></thead><tbody>
-    ${MIOS.map(p=>{const i=PASOS.indexOf(p.e);return`<tr>
+    ${MIOS.map(p=>{const i=PASOS.indexOf(p.e);return`<tr class="pr ${ABIERTO===p.n?'on':''}" onclick="verMio(${p.n})">
       <td class="m" style="font-weight:600">#${p.n}</td><td class="m">${p.f}</td>
       <td><span class="badge ${EST[p.e][0]}">${EST[p.e][1]}</span></td>
       <td><div class="track">${PASOS.map((_,k)=>`<i class="${k<i?'d':k===i?'c':''}"></i>`).join('')}</div></td>
       <td class="n">${p.u}</td><td class="n" style="font-weight:600">${money(p.t)}</td>
-      <td><button class="lk" onclick="duplicar(${p.n})">Duplicar</button></td></tr>`}).join('')}
+      <td class="acc"><button class="lk" onclick="event.stopPropagation();verMio(${p.n})">${ABIERTO===p.n?'Ocultar':'Ver detalle'}</button>
+        <button class="lk" onclick="event.stopPropagation();duplicar(${p.n})">Duplicar</button></td></tr>
+      ${ABIERTO===p.n?`<tr class="det"><td colspan="7">${detallePedido(p)}</td></tr>`:''}`}).join('')}
     </tbody></table></div>`:
   `<div class="empty"><div class="t">Todavía no cargaste ningún pedido</div>
    <div class="d">Armá el primero desde el catálogo: elegí una categoría, cargá cantidades y enviálo.</div>
    <button onclick="volverCats()">Ir al catálogo</button></div>`}`;
 }
+/* El mayorista también puede abrir su pedido y ver exactamente qué pidió. */
+function verMio(n){ ABIERTO = ABIERTO===n ? null : n; vHistorial(); }
+
 function duplicar(n){
   const p=PED.find(x=>x.n===n); let ajust=0, ok=0;
   Object.entries(p.items||{}).forEach(([k,q])=>{
@@ -3490,6 +3529,38 @@ function vEntrantes(){
 let fStkPanel='', fStkCat='', fStkCol='', fStkEst='', oStk='modelo';
 function limpiarStk(){ fStkPanel=fStkCat=fStkCol=fStkEst=''; vStock(); }
 
+
+/* ── Cambiar el SKU de una línea ──────────────────────────────────
+   El SKU identifica la línea en los pedidos y en la carga masiva de
+   stock, así que al cambiarlo arrastramos las dos cosas: lo guardamos
+   como cambio y actualizamos el índice para que todo siga enganchado. */
+let SKUED=null;
+function abrirSku(viejo){
+  const r=idx[viejo]; if(!r) return;
+  SKUED=viejo;
+  $('skn').textContent=r.m.nombre+' · '+r.f.n;
+  $('skv').value=viejo;
+  $('skerr').textContent='';
+  $('sk').classList.add('on'); setTimeout(()=>{$('skv').focus(); $('skv').select();},50);
+}
+function cerrarSku(){ $('sk').classList.remove('on'); SKUED=null; }
+function guardarSku(){
+  if(!SKUED) return;
+  const nuevo=$('skv').value.trim().toUpperCase();
+  const err=$('skerr'); err.textContent='';
+  if(!nuevo){ err.textContent='Poné un SKU.'; return; }
+  if(!/^[A-Z0-9][A-Z0-9\-_.]*$/.test(nuevo)){ err.textContent='Solo letras, números, guiones y puntos.'; return; }
+  if(nuevo===SKUED){ cerrarSku(); return; }
+  if(idx[nuevo]){ err.textContent='Ese SKU ya lo usa '+idx[nuevo].m.nombre+' '+idx[nuevo].f.n+'.'; return; }
+  const r=idx[SKUED];
+  SKUS[SKUED]=nuevo;              /* queda registrado para la nube */
+  r.f.sku=nuevo;
+  idx[nuevo]=r; delete idx[SKUED];
+  guardar(); cerrarSku();
+  toast('SKU actualizado: '+nuevo);
+  vStock();
+}
+
 /* ── Editar el precio de un modelo ────────────────────────────────
    El precio es del modelo, no de cada color, así que al cambiarlo se
    actualizan todas sus líneas de una. */
@@ -3642,7 +3713,9 @@ function vStock(){
         </td>
         <td class="n"><button class="lk" onclick="abrirPrecio('${r.m.id}','${esc(r.f.sku)}')"
           title="Editar el precio de ${esc(r.m.nombre)} ${esc(r.f.n)}">${money(pmay(r.f))}</button></td>
-        <td class="acc"><button class="mini no" onclick="borrarProducto('${r.m.id}')"
+        <td class="acc"><button class="mini" onclick="abrirSku('${esc(r.f.sku)}')"
+          title="Cambiar el SKU de ${esc(r.m.nombre)} ${esc(r.f.n)}">SKU</button>
+          <button class="mini no" onclick="borrarProducto('${r.m.id}')"
           title="Sacar ${esc(r.m.nombre)} del catálogo">Borrar</button></td></tr>`).join('')}
     </tbody></table>
     ${l.length>400?`<div class="mas">Se muestran las primeras 400 líneas. Usá el filtro para acotar.</div>`:''}
