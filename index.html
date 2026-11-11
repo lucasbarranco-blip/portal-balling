@@ -1242,23 +1242,27 @@ const CAT=[
 /* ══════════ BOLSOS ══════════ */
 {id:"bgL",ent:"Inmediato",cat:"bolsos",col:"Stickbags",nombre:"Stickbag Large",comp:"Funda grande",talles:TU,may:172000,pvp:344000,
  filas:[
-  {n:"Taupe",sku:"LST250",img:B+"ball-alter-2-large-stickbag-taupe-1.jpg"},
-  {n:"Teal",sku:"LSE250",img:B+"ball-alter-2-large-stickbag-teal-1.jpg"},
-  {n:"Mauve",sku:"LSM250",img:B+"ball-alter-2-large-stickbag-mauve-1.jpg"},
-  {n:"Black",sku:"BHSBLK",img:BAR+"Ball_Web-Bags-Large-45.jpg"}]},
+  {n:"Blanco",sku:"LST250",img:B+"ball-alter-2-large-stickbag-taupe-1.jpg"},
+  {n:"Azul",sku:"LSO250",img:B+"ball-alter-2-large-stickbag-oxford-1.jpg"},
+  {n:"Violeta",sku:"LSM250",img:B+"ball-alter-2-large-stickbag-mauve-1.jpg"},
+  {n:"Verde",sku:"LSE250",img:B+"ball-alter-2-large-stickbag-teal-1.jpg"},
+  {n:"Marrón",sku:"LSC250",img:B+"ball-alter-2-large-stickbag-carob-1.jpg"}]},
 
 {id:"bgM",ent:"Inmediato",cat:"bolsos",col:"Stickbags",nombre:"Stickbag Medium",comp:"Funda mediana",talles:TU,may:138700,pvp:277400,
  filas:[
-  {n:"Taupe",sku:"MST250",img:B+"ball-alter-2-medium-stickbag-taupe-1.jpg"},
-  {n:"Teal",sku:"MSE250",img:B+"ball-alter-2-medium-stickbag-teal-1.jpg"},
-  {n:"Mauve",sku:"MSM250",img:B+"ball-alter-2-medium-stickbag-mauve-1.jpg"},
-  {n:"Black",sku:"BHSBMK",img:BAR+"Ball-Web-Bags-Medium-45.jpg"}]},
+  {n:"Blanco",sku:"MST250",img:B+"ball-alter-2-medium-stickbag-taupe-1.jpg"},
+  {n:"Azul",sku:"MSO250",img:B+"ball-alter-2-medium-stickbag-oxford-1.jpg"},
+  {n:"Violeta",sku:"MSM250",img:B+"ball-alter-2-medium-stickbag-mauve-1.jpg"},
+  {n:"Verde",sku:"MSE250",img:B+"ball-alter-2-medium-stickbag-teal-1.jpg"},
+  {n:"Marrón",sku:"MSC250",img:B+"ball-alter-2-medium-stickbag-carob-1.jpg"}]},
 
 {id:"bgS",ent:"Inmediato",cat:"bolsos",col:"Stickbags",nombre:"Stickbag Small",comp:"Funda simple",talles:TU,may:112000,pvp:224000,
  filas:[
-  {n:"Taupe",sku:"SST250",img:B+"ball-alter-2-small-stickbag-taupe-1.jpg"},
-  {n:"Teal",sku:"SSE250",img:B+"ball-alter-2-small-stickbag-teal-1.jpg"},
-  {n:"Mauve",sku:"SSM250",img:B+"ball-alter-2-small-stickbag-mauve-1.jpg"}]},
+  {n:"Blanco",sku:"SST250",img:B+"ball-alter-2-small-stickbag-taupe-1.jpg"},
+  {n:"Azul",sku:"SSO250",img:B+"ball-alter-2-small-stickbag-oxford-1.jpg"},
+  {n:"Violeta",sku:"SSM250",img:B+"ball-alter-2-small-stickbag-mauve-1.jpg"},
+  {n:"Verde",sku:"SSE250",img:B+"ball-alter-2-small-stickbag-teal-1.jpg"},
+  {n:"Marrón",sku:"SSC250",img:B+"ball-alter-2-small-stickbag-carob-1.jpg"}]},
 
 {id:"bgOne",ent:"Inmediato",cat:"bolsos",col:"Stickbags",nombre:"One Stick Bag",comp:"Funda individual",talles:TU,may:22500,pvp:45000,
  filas:[
@@ -1267,11 +1271,11 @@ const CAT=[
 
 {id:"bkp",ent:"Inmediato",cat:"bolsos",col:"Backpacks",nombre:"Backpack",comp:"Mochila",talles:TU,may:100800,pvp:201600,
  filas:[
-  {n:"Taupe",sku:"BPT250",img:B+"ball-alter-2-backpack-taupe-1.jpg"},
-  {n:"Teal",sku:"BPE250",img:B+"ball-alter-2-backpack-teal-1.jpg"},
-  {n:"Mauve",sku:"BPM250",img:B+"ball-alter-2-backpack-mauve-1.jpg"},
-  {n:"Black",sku:"BHBPCK",img:BAR+"Ball-Web-Backpack-45.jpg"},
-  {n:"Brown",sku:"BHBPCR",img:B+"ball-alter-2-backpack-carob-1.jpg",may:99500,pvp:199000}]},
+  {n:"Blanco",sku:"BPT250",img:B+"ball-alter-2-backpack-taupe-1.jpg"},
+  {n:"Azul",sku:"BPO250",img:B+"ball-alter-2-backpack-oxford-1.jpg"},
+  {n:"Violeta",sku:"BPM250",img:B+"ball-alter-2-backpack-mauve-1.jpg"},
+  {n:"Verde",sku:"BPE250",img:B+"ball-alter-2-backpack-teal-1.jpg"},
+  {n:"Marrón",sku:"BPC250",img:B+"ball-alter-2-backpack-carob-1.jpg"}]},
 
 /* ══════════ ACCESORIOS ══════════ */
 {id:"gl_s",ent:"Inmediato",cat:"accesorios",col:"Guantes",nombre:"Venture Glove V2 Short",comp:"Guante corto",talles:TG,may:34500,pvp:69000,
@@ -1700,7 +1704,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-11-11c';
+const VERSION='2026-11-11d';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
