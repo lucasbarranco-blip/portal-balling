@@ -467,6 +467,8 @@ tfoot td.l{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:up
 
 
 
+.cq.pv{background:#2B5CE6;color:#fff;border:0}
+
 .stk.pv,.sp.pv{background:#EEF4FF;color:#2B5CE6;border:1px solid #C7D8FF;
   border-radius:999px;padding:2px 9px;font:600 10.5px/1.6 'Instrument Sans';
   letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
@@ -1698,7 +1700,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-11-11b';
+const VERSION='2026-11-11c';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
@@ -2188,7 +2190,8 @@ function vCatalogo(){
     const pr=promosDe(ms);
     const mx=pr.length?Math.max(...pr.map(p=>p.pct)):0;
     return `<button class="cat" onclick="abrirCat('${c.id}')">
-      ${mx?`<span class="cq promo">−${mx}%</span>`:q?`<span class="cq">${q} u.</span>`:''}
+      ${c.id==='bolsos'?`<span class="cq pv">Pre venta</span>`
+        :mx?`<span class="cq promo">−${mx}%</span>`:q?`<span class="cq">${q} u.</span>`:''}
       <span class="fig"><img src="${px(c.img,800)}" alt="${c.nombre}" loading="lazy" onload="encuadre(this)" onerror="fotoFalla(this,'${c.nombre}')"></span>
       <span class="ov"><span class="cn">${c.nombre}</span></span>
     </button>`}).join('')}</div>`;
@@ -2214,7 +2217,8 @@ function vSubcategorias(){
     const pr=promosDe(ms);
     const mx=pr.length?Math.max(...pr.map(p=>p.pct)):0;
     return `<button class="cat" onclick="abrirSub(${JSON.stringify(sc).replace(/"/g,'&quot;')})">
-      ${mx?`<span class="cq promo">−${mx}%</span>`:q?`<span class="cq">${q} u.</span>`:''}
+      ${c.id==='bolsos'?`<span class="cq pv">Pre venta</span>`
+        :mx?`<span class="cq promo">−${mx}%</span>`:q?`<span class="cq">${q} u.</span>`:''}
       <span class="fig"><img src="${px(ms[0].filas[0].img,640)}" alt="${esc(sc)}" loading="lazy" onload="encuadre(this)" onerror="fotoFalla(this,'${esc(sc)}')"></span>
       <span class="ov"><span class="cn">${sc}</span>${NOTA[sc]?`<span class="cnota">${NOTA[sc]}</span>`:''}</span>
     </button>`}).join('')}</div>`;
