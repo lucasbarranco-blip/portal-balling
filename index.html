@@ -1323,9 +1323,7 @@ const CAT=[
 {id:"grip3",ent:"Inmediato",cat:"accesorios",col:"Grips",nombre:"Tripack Chamois",comp:"Pack x3",talles:TU,may:30000,pvp:60000,
  filas:[
   {n:"Black",sku:"CHGB005X3",img:B+"Ball-GripsNuevos-ChamoisX3_White-1200x1800.jpg"},
-  {n:"White",sku:"CHGB008X3",img:B+"Ball-GripsNuevos-ChamoisX3_White-1200x1800.jpg"},
-  {n:"Pink",sku:"CHGB003X3",img:B+"Ball-GripsNuevos-Chamois_Pink-1200x1800.jpg"},
-  {n:"Beige",sku:"CHGBNATX3",img:B+"Ball-GripsNuevos-Chamois_Natural-1200x1800.jpg"}]},
+  {n:"White",sku:"CHGB008X3",img:B+"Ball-GripsNuevos-ChamoisX3_White-1200x1800.jpg"}]},
 
 {id:"gripS",ent:"Inmediato",cat:"accesorios",col:"Grips",nombre:"Soft Grip",comp:"PU perforado",talles:TU,may:11900,pvp:23800,
  filas:[
@@ -1704,7 +1702,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-11-11d';
+const VERSION='2026-11-11e';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
@@ -2296,10 +2294,10 @@ function listaPlana(ms){
       <td class="n mute">${money(f.pvp)}</td>
       <td>
         <div class="stp ${v?'has':''}" id="sp-${esc(k)}">
-          <button onclick="paso('${esc(k)}',-1)" ${(!st||v<=0)?'disabled':''} aria-label="Restar">−</button>
+          <button onclick="paso('${esc(k)}',-1)" ${v<=0?'disabled':''} aria-label="Restar">−</button>
           <input type="number" min="0" max="${st}" value="${v||''}" placeholder="0" ${st?'':'disabled'}
             oninput="setq('${esc(k)}',this)" onkeydown="navGrilla(event,'${esc(k)}')">
-          <button onclick="paso('${esc(k)}',1)" ${(!st||v>=st)?'disabled':''} aria-label="Sumar">+</button>
+          <button onclick="paso('${esc(k)}',1)" ${(porEncargo(m)?false:(!st||v>=st))?'disabled':''} aria-label="Sumar">+</button>
         </div>
       </td>
       <td class="n rmoney" id="pm-${esc(k)}">${v?money(v*pmay(f)):''}</td>
@@ -2369,11 +2367,11 @@ function matriz(m){
         return `<td class="cel ${cl}">
           <span class="aviso">${porEncargo(m)?`<span class="stk pv">Pre venta</span>`:(st===0?`<span class="stk no">Sin stock</span>`:'')}</span>
           <div class="stp ${v?'has':''}" id="sp-${esc(k)}">
-            <button onclick="event.stopPropagation();paso('${esc(k)}',-1)" ${(!st||v<=0)?'disabled':''} aria-label="Restar">−</button>
+            <button onclick="event.stopPropagation();paso('${esc(k)}',-1)" ${v<=0?'disabled':''} aria-label="Restar">−</button>
             <input type="number" min="0" max="${st}" value="${v||''}" placeholder="0" ${st?'':'disabled'}
               onclick="event.stopPropagation()" oninput="setq('${esc(k)}',this)"
               onkeydown="navGrilla(event,'${esc(k)}')">
-            <button onclick="event.stopPropagation();paso('${esc(k)}',1)" ${(!st||v>=st)?'disabled':''} aria-label="Sumar">+</button>
+            <button onclick="event.stopPropagation();paso('${esc(k)}',1)" ${(porEncargo(m)?false:(!st||v>=st))?'disabled':''} aria-label="Sumar">+</button>
           </div>
         </td>`}).join('')}
       <td class="tt" id="rt-${f.sku}">${rt||''}</td>
@@ -2465,7 +2463,9 @@ function refrescar(k){
   if(box){                              // el modelo puede estar colapsado
     box.classList.toggle('has',!!n);
     const bs=box.querySelectorAll('button');
-    if(bs.length>=2){ bs[0].disabled = !s || n<=0; bs[1].disabled = !s || n>=s; }
+    /* en preventa no hay tope: se puede pedir aunque no haya stock */
+    const libre=porEncargo(m);
+    if(bs.length>=2){ bs[0].disabled = n<=0; bs[1].disabled = libre ? false : (!s || n>=s); }
   }
   const set=(id,v)=>{const e=$(id); if(e) e.textContent=v;};
   set('rt-'+f.sku, m.talles.reduce((a,x)=>a+val(f.sku+'|'+x),0)||'');
@@ -2581,7 +2581,7 @@ function vPedido(){
           <div class="stp has" id="lp-${esc(l.k)}">
             <button onclick="pasoLn('${esc(l.k)}',-1)">−</button>
             <input type="number" min="1" max="${l.f.stock[l.t]}" value="${cart[l.k]}" oninput="setLn('${esc(l.k)}',this)">
-            <button onclick="pasoLn('${esc(l.k)}',1)" ${cart[l.k]>=l.f.stock[l.t]?'disabled':''}>+</button>
+            <button onclick="pasoLn('${esc(l.k)}',1)" ${(porEncargo(l.m)?false:cart[l.k]>=l.f.stock[l.t])?'disabled':''}>+</button>
           </div>
           <div class="p1">${money(pmay(l.f))}</div>
           <div class="p2">${money(cart[l.k]*pmay(l.f))}</div>
