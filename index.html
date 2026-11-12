@@ -1264,10 +1264,21 @@ const CAT=[
   {n:"Verde",sku:"SSE250",img:B+"ball-alter-2-small-stickbag-teal-1.jpg"},
   {n:"Marrón",sku:"SSC250",img:B+"ball-alter-2-small-stickbag-carob-1.jpg"}]},
 
-{id:"bgOne",ent:"Inmediato",cat:"bolsos",col:"Stickbags",nombre:"One Stick Bag",comp:"Funda individual",talles:TU,may:22500,pvp:45000,
+{id:"bgUrb",ent:"Inmediato",cat:"bolsos",col:"Backpacks",nombre:"Mochila Urbana",comp:"Mochila college",talles:TU,may:81600,pvp:163200,
  filas:[
-  {n:"Black",sku:"OSBBK",img:B+"ball-stickbag-marron-slide04_1200x1800_jpg_9ddaa8d3-363f-41b0-8cb2-3f1132894056.jpg"},
-  {n:"Blue",sku:"OSBBL",img:B+"ball-stickbag-azul-slide04_1200x1800_jpg.jpg"}]},
+  {n:"Blanco",sku:"UBT250",img:B+"ball-alter-2-urban-backpack-taupe-1.jpg"},
+  {n:"Azul",sku:"UBO250",img:B+"ball-alter-2-urban-backpack-oxford-1.jpg"},
+  {n:"Violeta",sku:"UBM250",img:B+"ball-alter-2-urban-backpack-mauve-1.jpg"},
+  {n:"Verde",sku:"UBE250",img:B+"ball-alter-2-urban-backpack-teal-1.jpg"},
+  {n:"Marrón",sku:"UBC250",img:B+"ball-alter-2-urban-backpack-carob-1_98d580b4-1fa6-4f85-91e2-eba1b3145b25.jpg"}]},
+
+{id:"bgNec",ent:"Inmediato",cat:"bolsos",col:"Backpacks",nombre:"Neceser",comp:"Neceser",talles:TU,may:35700,pvp:71400,
+ filas:[
+  {n:"Blanco",sku:"WBT250",img:B+"ball-alt2-wash-bag-taupe-1.jpg"},
+  {n:"Azul",sku:"WBO250",img:B+"ball-alt2-wash-bag-oxford-1.jpg"},
+  {n:"Violeta",sku:"WBM250",img:B+"ball-alt2-wash-bag-mauve-1.jpg"},
+  {n:"Verde",sku:"WBE250",img:B+"ball-alt2-wash-bag-teal-1.jpg"},
+  {n:"Marrón",sku:"WBC250",img:B+"ball-alt2-wash-bag-carob-1.jpg"}]},
 
 {id:"bkp",ent:"Inmediato",cat:"bolsos",col:"Backpacks",nombre:"Backpack",comp:"Mochila",talles:TU,may:100800,pvp:201600,
  filas:[
@@ -1702,7 +1713,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-11-11e';
+const VERSION='2026-11-12a';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
