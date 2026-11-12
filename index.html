@@ -298,6 +298,7 @@ td.pr .pr-of{color:var(--ember)}
 .stp input{width:40px;height:32px;padding:0;text-align:center;border:none;background:transparent;
   font-family:'Instrument Sans';font-weight:600;font-size:14px;-moz-appearance:textfield}
 .stp input::-webkit-outer-spin-button,.stp input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stp input::placeholder{color:var(--ink);opacity:1}
 .stp input:focus{outline:none;background:#fff}
 .stp.has input{color:var(--ink)}
 /* stock — se lee antes que el stepper */
@@ -1723,7 +1724,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-11-12c';
+const VERSION='2026-11-12d';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
@@ -2315,7 +2316,7 @@ function listaPlana(ms){
       <td class="n mute">${money(f.pvp)}</td>
       <td>
         <div class="stp ${v?'has':''}" id="sp-${esc(k)}">
-          <button onclick="paso('${esc(k)}',-1)" ${v<=0?'disabled':''} aria-label="Restar">−</button>
+          <button onclick="paso('${esc(k)}',-1)"  aria-label="Restar">−</button>
           <input type="number" min="0" max="${st}" value="${v||''}" placeholder="0" ${st?'':'disabled'}
             oninput="setq('${esc(k)}',this)" onkeydown="navGrilla(event,'${esc(k)}')">
           <button onclick="paso('${esc(k)}',1)" ${(porEncargo(m)?false:(!st||v>=st))?'disabled':''} aria-label="Sumar">+</button>
@@ -2388,7 +2389,7 @@ function matriz(m){
         return `<td class="cel ${cl}">
           <span class="aviso">${porEncargo(m)?`<span class="stk pv">Pre venta</span>`:(st===0?`<span class="stk no">Sin stock</span>`:'')}</span>
           <div class="stp ${v?'has':''}" id="sp-${esc(k)}">
-            <button onclick="event.stopPropagation();paso('${esc(k)}',-1)" ${v<=0?'disabled':''} aria-label="Restar">−</button>
+            <button onclick="event.stopPropagation();paso('${esc(k)}',-1)"  aria-label="Restar">−</button>
             <input type="number" min="0" max="${st}" value="${v||''}" placeholder="0" ${st?'':'disabled'}
               onclick="event.stopPropagation()" oninput="setq('${esc(k)}',this)"
               onkeydown="navGrilla(event,'${esc(k)}')">
@@ -2486,7 +2487,7 @@ function refrescar(k){
     const bs=box.querySelectorAll('button');
     /* en preventa no hay tope: se puede pedir aunque no haya stock */
     const libre=porEncargo(m);
-    if(bs.length>=2){ bs[0].disabled = n<=0; bs[1].disabled = libre ? false : (!s || n>=s); }
+    if(bs.length>=2){ bs[0].disabled = false; bs[1].disabled = libre ? false : (!s || n>=s); }
   }
   const set=(id,v)=>{const e=$(id); if(e) e.textContent=v;};
   set('rt-'+f.sku, m.talles.reduce((a,x)=>a+val(f.sku+'|'+x),0)||'');
