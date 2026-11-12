@@ -319,6 +319,9 @@ td.cel .aviso{display:flex;justify-content:center;align-items:center;
   min-height:20px;margin-bottom:7px}
 td.cel .stp{margin:0 auto}
 td.cel.no .stp{opacity:.5}
+/* En preventa no hay tope de stock, asi que la fila no se atenua:
+   todas las lineas del modelo se ven igual. */
+td.cel.no:has(.stk.pv) .stp{opacity:1}
 tr.flash td{animation:flash 1.8s ease}
 @keyframes flash{0%,60%{background:#FFF3C4}100%{background:transparent}}
 td.tt{font-family:'Instrument Sans';font-weight:600;font-size:14px;background:#F7F7F4}
@@ -1724,7 +1727,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-11-12d';
+const VERSION='2026-11-12e';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
