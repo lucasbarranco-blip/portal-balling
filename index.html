@@ -288,7 +288,9 @@ td.pr .pr-of{color:var(--ember)}
 
 /* stepper */
 .stp{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:3px;background:var(--card);overflow:hidden}
-.stp.has{border-color:var(--teal);background:var(--teal-l)}
+/* Antes el recuadro se teñía de verde al cargar unidades y parecía
+   que ese color estaba en otro estado. Ahora todos se ven igual. */
+.stp.has{border-color:var(--ink)}
 .stp button{width:26px;height:32px;font-family:'Instrument Sans';font-weight:600;font-size:15px;color:var(--mute);
   line-height:1;display:grid;place-items:center;flex:none}
 .stp button:hover:not(:disabled){background:var(--ink);color:#fff}
@@ -297,7 +299,7 @@ td.pr .pr-of{color:var(--ember)}
   font-family:'Instrument Sans';font-weight:600;font-size:14px;-moz-appearance:textfield}
 .stp input::-webkit-outer-spin-button,.stp input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .stp input:focus{outline:none;background:#fff}
-.stp.has input{color:var(--teal-d)}
+.stp.has input{color:var(--ink)}
 /* stock — se lee antes que el stepper */
 .stk{display:inline-flex;align-items:center;white-space:nowrap;
   font:600 9.5px/1 'Instrument Sans';letter-spacing:.07em;text-transform:uppercase;
@@ -1721,7 +1723,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-11-12b';
+const VERSION='2026-11-12c';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
