@@ -1727,7 +1727,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-11-12e';
+const VERSION='2026-11-13a';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
@@ -2695,6 +2695,39 @@ function textoAviso(p){
 }
 
 /* No frenamos el pedido si el aviso falla: el pedido ya quedó guardado. */
+
+/* ── Copia del aviso para algunos clientes ────────────────────
+   Los clientes de la cartera del padre de Ariel: cuando uno de ellos
+   manda un pedido, el aviso va también a su casilla. Para sumar o
+   sacar clientes, se edita esta lista. */
+const COPIAS = [{
+  mail: 'Coco71956@gmail.com',
+  clientes: [
+    /* Los nombres son los de la cuenta en el portal: tres venían
+       escritos distinto en la lista original y se ajustaron. */
+    'Barbudez Vera','Burgoa Carolina','Campos Raquel','Cesar Daniel Vera',
+    'Crespi Mariano','De Freitas Pablo','Despa SRL','Estacion Deportes SRL',
+    'Franco Luciano Agustin','Gabriel Espejo','Herrera Gabriel Marcelo',
+    'Ingoal','Mardones Nicolas','Matias Alvarez','Porras Daniel',
+    'Ronchi Paola Daniela','Rosales Martina','Soria Fourcada',
+    'Top Sport S.A','Varela Enzo'
+  ]
+}];
+
+/* Comparamos sin acentos ni mayúsculas: los nombres se cargan a mano
+   y una tilde de más no debería dejar a nadie sin la copia. */
+const sinTildes = s => String(s||'').toLowerCase()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+
+function destinatarios(p){
+  const l = [...AVISO.para];
+  const cli = sinTildes(p.cli);
+  COPIAS.forEach(c=>{
+    if(c.clientes.some(x=>sinTildes(x)===cli) && !l.includes(c.mail)) l.push(c.mail);
+  });
+  return l;
+}
+
 async function avisarPedido(p){
   if(!AVISO.url) return;
   try{
@@ -2702,7 +2735,7 @@ async function avisarPedido(p){
     await fetch(AVISO.url,{method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify({
-        para: AVISO.para,
+        para: destinatarios(p),
         asunto: 'Nuevo pedido #'+p.n+' · '+(p.cli||'mayorista'),
         texto: textoAviso(p),
         pedido: {n:p.n, cliente:p.cli, cuit:p.cuit, fecha:p.f,
