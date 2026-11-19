@@ -1252,7 +1252,8 @@ const CAT=[
   {n:"Azul",sku:"LSO250",img:B+"ball-alter-2-large-stickbag-oxford-1.jpg"},
   {n:"Violeta",sku:"LSM250",img:B+"ball-alter-2-large-stickbag-mauve-1.jpg"},
   {n:"Verde",sku:"LSE250",img:B+"ball-alter-2-large-stickbag-teal-1.jpg"},
-  {n:"Marrón",sku:"LSC250",img:B+"ball-alter-2-large-stickbag-carob-1.jpg"}]},
+  {n:"Marrón",sku:"LSC250",img:B+"ball-alter-2-large-stickbag-carob-1.jpg"},
+  {n:"Negro",sku:"LSB250",img:B+"Ball-Web-AlterBlack2-Bag_Large-01.jpg"}]},
 
 {id:"bgM",ent:"Inmediato",cat:"bolsos",col:"Stickbags",nombre:"Stickbag Medium",comp:"Funda mediana",talles:TU,may:138700,pvp:277400,
  filas:[
@@ -1260,7 +1261,8 @@ const CAT=[
   {n:"Azul",sku:"MSO250",img:B+"ball-alter-2-medium-stickbag-oxford-1.jpg"},
   {n:"Violeta",sku:"MSM250",img:B+"ball-alter-2-medium-stickbag-mauve-1.jpg"},
   {n:"Verde",sku:"MSE250",img:B+"ball-alter-2-medium-stickbag-teal-1.jpg"},
-  {n:"Marrón",sku:"MSC250",img:B+"ball-alter-2-medium-stickbag-carob-1.jpg"}]},
+  {n:"Marrón",sku:"MSC250",img:B+"ball-alter-2-medium-stickbag-carob-1.jpg"},
+  {n:"Negro",sku:"MSB250",img:B+"Ball-Web-AlterBlack2-Bag_Medium-01.jpg"}]},
 
 {id:"bgS",ent:"Inmediato",cat:"bolsos",col:"Stickbags",nombre:"Stickbag Small",comp:"Funda simple",talles:TU,may:112000,pvp:224000,
  filas:[
@@ -1268,7 +1270,8 @@ const CAT=[
   {n:"Azul",sku:"SSO250",img:B+"ball-alter-2-small-stickbag-oxford-1.jpg"},
   {n:"Violeta",sku:"SSM250",img:B+"ball-alter-2-small-stickbag-mauve-1.jpg"},
   {n:"Verde",sku:"SSE250",img:B+"ball-alter-2-small-stickbag-teal-1.jpg"},
-  {n:"Marrón",sku:"SSC250",img:B+"ball-alter-2-small-stickbag-carob-1.jpg"}]},
+  {n:"Marrón",sku:"SSC250",img:B+"ball-alter-2-small-stickbag-carob-1.jpg"},
+  {n:"Negro",sku:"SSB250",img:B+"Ball-Web-AlterBlack2-Bag_Small-01.jpg"}]},
 
 {id:"bgUrb",ent:"Inmediato",cat:"bolsos",col:"Backpacks",nombre:"Urban Backpack",comp:"Mochila college",talles:TU,may:81600,pvp:163200,
  filas:[
@@ -1276,7 +1279,8 @@ const CAT=[
   {n:"Azul",sku:"UBO250",img:B+"ball-alter-2-urban-backpack-oxford-1.jpg"},
   {n:"Violeta",sku:"UBM250",img:B+"ball-alter-2-urban-backpack-mauve-1.jpg"},
   {n:"Verde",sku:"UBE250",img:B+"ball-alter-2-urban-backpack-teal-1.jpg"},
-  {n:"Marrón",sku:"UBC250",img:B+"ball-alter-2-urban-backpack-carob-1_98d580b4-1fa6-4f85-91e2-eba1b3145b25.jpg"}]},
+  {n:"Marrón",sku:"UBC250",img:B+"ball-alter-2-urban-backpack-carob-1_98d580b4-1fa6-4f85-91e2-eba1b3145b25.jpg"},
+  {n:"Negro",sku:"UBB250",img:B+"Ball-Web-AlterBlack2-Small_Backpack-01.jpg"}]},
 
 {id:"bgNec",ent:"Inmediato",cat:"bolsos",col:"Backpacks",nombre:"Wash Bag",comp:"Neceser",talles:TU,may:35700,pvp:71400,
  filas:[
@@ -1300,7 +1304,8 @@ const CAT=[
   {n:"Azul",sku:"BPO250",img:B+"ball-alter-2-backpack-oxford-1.jpg"},
   {n:"Violeta",sku:"BPM250",img:B+"ball-alter-2-backpack-mauve-1.jpg"},
   {n:"Verde",sku:"BPE250",img:B+"ball-alter-2-backpack-teal-1.jpg"},
-  {n:"Marrón",sku:"BPC250",img:B+"ball-alter-2-backpack-carob-1.jpg"}]},
+  {n:"Marrón",sku:"BPC250",img:B+"ball-alter-2-backpack-carob-1.jpg"},
+  {n:"Negro",sku:"BPB250",img:B+"Ball-Web-AlterBlack2-Backpack-01.jpg"}]},
 
 /* ══════════ ACCESORIOS ══════════ */
 {id:"gl_s",ent:"Inmediato",cat:"accesorios",col:"Guantes",nombre:"Venture Glove V2 Short",comp:"Guante corto",talles:TG,may:34500,pvp:69000,
@@ -1727,7 +1732,7 @@ const FIREBASE = {
 
 /* Versión del portal. El archivo v.txt del servidor tiene este mismo
    valor: si no coinciden, esta pestaña está corriendo código viejo. */
-const VERSION='2026-11-13a';
+const VERSION='2026-11-19a';
 let CFG=null, SYNC={estado:'local', ts:null, cola:null, causa:''};
 /* Prioridad: lo que se haya configurado desde la app manda sobre lo de fábrica */
 try{ CFG=JSON.parse(localStorage.getItem(LS+'-cfg')||'null'); }catch(e){}
